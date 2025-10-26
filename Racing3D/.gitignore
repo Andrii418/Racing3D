@@ -1,0 +1,19 @@
+# Folder Visual Studio
+.vs/
+
+# Pliki konfiguracyjne/serwisowe Visual Studio
+*.suo
+*.user
+*.ncb
+*.opensdf
+*.sdf
+*.tlog
+
+# Foldery kompilacji i wyjscia
+[Dd]ebug/
+[Rr]elease/
+x64/
+
+# Dodatkowe foldery
+bin/
+obj/
