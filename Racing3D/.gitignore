@@ -1,5 +1,5 @@
 # Folder Visual Studio
-.vs/
+.vs/ # <-- Musi tu byæ, by ignorowaæ folder .vs
 
 # Pliki konfiguracyjne/serwisowe Visual Studio
 *.suo
@@ -13,6 +13,7 @@
 [Dd]ebug/
 [Rr]elease/
 x64/
+out/ # <-- DODAJ TÊ LINIÊ, aby zignorowaæ folder 'out'
 
 # Dodatkowe foldery
 bin/

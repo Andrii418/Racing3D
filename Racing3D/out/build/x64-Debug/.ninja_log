@@ -1,4 +1,16 @@
 # ninja log v6
-29	493	7831909442912221	CMakeFiles/Racing3D.dir/src/main.cpp.obj	16d34b6bcfd73198
-17	197	7831920022712982	build.ninja	485f6b288d31a2cf
-494	1109	7831909447557526	Racing3D.exe	cc364c1975815868
+54	1113	7834629077933161	CMakeFiles/Racing3D.dir/src/main.cpp.obj	16d34b6bcfd73198
+10	706	7834620513551831	CMakeFiles/Racing3D.dir/src/Camera.cpp.obj	6ee0797b1627a4e7
+6	262	7834630331259772	build.ninja	485f6b288d31a2cf
+41	909	7834617063406856	CMakeFiles/Racing3D.dir/src/Shader.cpp.obj	71a3cde95a853c50
+1114	2064	7834629088435242	Racing3D.exe	beb4995c08dea5d4
+23	702	7834623862195222	CMakeFiles/Racing3D.dir/src/Track.cpp.obj	1fa091e9a11c3d63
+36	884	7834617063366684	CMakeFiles/Racing3D.dir/src/Car.cpp.obj	a9fc5d66d4ba492d
+33	792	7834630362194328	Racing3D.exe	b9ead1a1cd0e2601
+23	690	7834630569176597	CMakeFiles/Racing3D.dir/src/main.cpp.obj	16d34b6bcfd73198
+691	1421	7834630575900011	Racing3D.exe	b9ead1a1cd0e2601
+10	678	7834633971674680	CMakeFiles/Racing3D.dir/src/Car.cpp.obj	a9fc5d66d4ba492d
+31	822	7834635441467240	CMakeFiles/Racing3D.dir/src/Car.cpp.obj	a9fc5d66d4ba492d
+41	836	7834635441574690	CMakeFiles/Racing3D.dir/src/main.cpp.obj	16d34b6bcfd73198
+36	854	7834635441521326	CMakeFiles/Racing3D.dir/src/Track.cpp.obj	1fa091e9a11c3d63
+855	1771	7834635449651775	Racing3D.exe	b9ead1a1cd0e2601

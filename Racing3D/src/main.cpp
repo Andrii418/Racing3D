@@ -1,128 +1,158 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
-#include <vector>
+#include <cmath>
 
-// Callback zmieniaj¹cy viewport
+// Musisz mieæ w projekcie bibliotekê GLM!
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+// Nasze klasy
+#include "Shader.h"
+#include "Camera.h"
+#include "Car.h"
+#include "Track.h" // Wymagany nag³ówek Toru
+
+// Sta³e
+const unsigned int SCR_WIDTH = 1280;
+const unsigned int SCR_HEIGHT = 720;
+
+// Globalne zmienne (do kontroli obiektów i czasu)
+Car* car;
+Camera* camera;
+Track* track; // Obiekt Toru
+bool keys[1024];
+float lastFrame = 0.0f;
+
+// Callback zmieniaj¹cy viewport (pozostaje)
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-// Funkcja dodaj¹ca prostok¹t do wektora wierzcho³ków
-void addRect(std::vector<float>& vertices, float x, float y, float w, float h) {
-    float rect[] = {
-        x,     y + h, 0.0f,
-        x,     y,     0.0f,
-        x + w, y,     0.0f,
+// Funkcja obs³ugi klawiatury (do ci¹g³ego sprawdzania stanu klawiszy)
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode) {
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
 
-        x,     y + h, 0.0f,
-        x + w, y,     0.0f,
-        x + w, y + h, 0.0f
-    };
-    vertices.insert(vertices.end(), rect, rect + 18);
+    if (key >= 0 && key < 1024) {
+        if (action == GLFW_PRESS)
+            keys[key] = true;
+        else if (action == GLFW_RELEASE)
+            keys[key] = false;
+    }
 }
 
-// Funkcja dodaj¹ca ko³o (przybli¿one wielok¹tem)
-void addCircle(std::vector<float>& vertices, float cx, float cy, float r, int segments = 20) {
-    for (int i = 0; i < segments; ++i) {
-        float theta1 = 2.0f * 3.1415926f * i / segments;
-        float theta2 = 2.0f * 3.1415926f * (i + 1) / segments;
+// Funkcja obs³uguj¹ca sterowanie samochodem
+void processCarInput(float deltaTime) {
+    float currentSpeed = glm::length(car->Velocity);
 
-        vertices.push_back(cx);
-        vertices.push_back(cy);
-        vertices.push_back(0.0f);
+    if (keys[GLFW_KEY_W]) {
+        car->Velocity += car->FrontVector * car->Acceleration * deltaTime;
+    }
+    if (keys[GLFW_KEY_S]) {
+        car->Velocity -= car->FrontVector * car->Braking * deltaTime;
+    }
 
-        vertices.push_back(cx + r * cos(theta1));
-        vertices.push_back(cy + r * sin(theta1));
-        vertices.push_back(0.0f);
+    // Ograniczenie maksymalnej prêdkoœci
+    if (glm::length(car->Velocity) > car->MaxSpeed) {
+        car->Velocity = glm::normalize(car->Velocity) * car->MaxSpeed;
+    }
 
-        vertices.push_back(cx + r * cos(theta2));
-        vertices.push_back(cy + r * sin(theta2));
-        vertices.push_back(0.0f);
+    // Skrêcanie - tylko gdy samochód siê rusza
+    if (currentSpeed > 0.1f || glm::length(car->Velocity) < -0.1f) {
+        float turnAmount = car->TurnRate * deltaTime * 50.0f;
+
+        if (keys[GLFW_KEY_A]) {
+            car->Yaw += turnAmount;
+        }
+        if (keys[GLFW_KEY_D]) {
+            car->Yaw -= turnAmount;
+        }
+
+        // Aktualizacja wektora Front na podstawie nowego k¹ta Yaw
+        car->FrontVector.x = cos(glm::radians(car->Yaw)) * cos(glm::radians(0.0f));
+        car->FrontVector.z = sin(glm::radians(car->Yaw)) * cos(glm::radians(0.0f));
+        car->FrontVector = glm::normalize(car->FrontVector);
     }
 }
 
 int main() {
+    // 1. Inicjalizacja GLFW
     if (!glfwInit()) return -1;
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Racing3D", nullptr, nullptr);
-    if (!window) return -1;
+    // 2. Tworzenie okna
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Racing3D", nullptr, nullptr);
+    if (!window) { /* B³¹d */ glfwTerminate(); return -1; }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetKeyCallback(window, key_callback);
 
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) return -1;
+    // 3. £adowanie GLAD
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) { /* B³¹d */ return -1; }
 
-    glViewport(0, 0, 800, 600);
+    // Ustawienia 3D
+    glEnable(GL_DEPTH_TEST);
 
-    // Vertex shader
-    const char* vertexShaderSource = R"(
-    #version 330 core
-    layout (location = 0) in vec3 aPos;
-    void main() {
-        gl_Position = vec4(aPos, 1.0);
-    }
-    )";
+    // 4. Inicjalizacja obiektów gry
+    Shader carTrackShader("shaders/phong.vert", "shaders/phong.frag");
 
-    // Fragment shader
-    const char* fragmentShaderSource = R"(
-    #version 330 core
-    out vec4 FragColor;
-    void main() {
-        FragColor = vec4(1.0, 0.5, 0.2, 1.0); // pomarañczowy samochodzik
-    }
-    )";
-
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
-    glCompileShader(vertexShader);
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
-    glCompileShader(fragmentShader);
-
-    unsigned int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    // Przygotowanie wierzcho³ków samochodzika
-    std::vector<float> vertices;
-    // Korpus samochodu
-    addRect(vertices, -0.5f, -0.2f, 1.0f, 0.3f); // prostok¹t korpusu
-    addRect(vertices, -0.3f, 0.1f, 0.6f, 0.2f);  // dach samochodu
-    // Ko³a
-    addCircle(vertices, -0.35f, -0.2f, 0.1f);
-    addCircle(vertices, 0.35f, -0.2f, 0.1f);
-
-    unsigned int VAO, VBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
+    car = new Car(glm::vec3(0.0f, 0.5f, 0.0f));
+    camera = new Camera(glm::vec3(0.0f, 3.0f, 5.0f));
+    track = new Track(); // Inicjalizacja Toru
 
     // Pêtla renderowania
     while (!glfwWindowShouldClose(window)) {
-        glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        // 5. Obliczenie DeltaTime
+        float currentFrame = glfwGetTime();
+        float deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
 
-        glUseProgram(shaderProgram);
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 3);
+        // 6. Wejœcie i Aktualizacja
+        processCarInput(deltaTime);
+        car->Update(deltaTime);
+        camera->FollowCar(car->Position, car->FrontVector);
 
+        // 7. Renderowanie
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // Ustawienie shadera
+        carTrackShader.use();
+        carTrackShader.setMat4("view", camera->GetViewMatrix());
+        carTrackShader.setMat4("projection", camera->GetProjectionMatrix((float)SCR_WIDTH / (float)SCR_HEIGHT));
+
+        // --- Uniformy Oœwietlenia ---
+        glm::vec3 lightPos(5.0f, 10.0f, 5.0f);
+        glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
+        glm::vec3 viewPos = camera->Position;
+
+        carTrackShader.setVec3("viewPos", viewPos);
+        carTrackShader.setVec3("lightPos", lightPos);
+        carTrackShader.setVec3("lightColor", lightColor);
+
+        // --- Rysowanie Toru ---
+        glm::vec3 trackColor(0.2f, 0.4f, 0.2f);
+        carTrackShader.setVec3("objectColor", trackColor);
+        track->Draw(carTrackShader);
+
+        // --- Rysowanie Samochodu ---
+        glm::vec3 carColor(1.0f, 0.5f, 0.2f);
+        carTrackShader.setVec3("objectColor", carColor);
+        car->Draw(carTrackShader);
+
+        // 8. Zamiana buforów i obs³uga zdarzeñ
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteProgram(shaderProgram);
+    // 9. Sprz¹tanie
+    delete car;
+    delete camera;
+    delete track; // Czyszczenie pamiêci Toru
     glfwTerminate();
     return 0;
 }
