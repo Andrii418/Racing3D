@@ -1,12 +1,12 @@
-// src/Camera.h
+ï»¿// src/Camera.h
 #pragma once
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-// Domyœlne wartoœci
+// DomyÅ›lne wartoÅ›ci
 const float YAW = -90.0f;
-const float PITCH = -20.0f; // Patrzymy trochê w dó³ na samochód
+const float PITCH = -20.0f; // Patrzymy trochÄ™ w dÃ³Å‚ na samochÃ³d
 const float ZOOM = 45.0f;
 
 class Camera {

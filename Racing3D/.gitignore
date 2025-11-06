@@ -1,20 +1,78 @@
-# Folder Visual Studio
-.vs/ # <-- Musi tu byæ, by ignorowaæ folder .vs
+# ==========================================
+# Visual Studio / CMake / Racing3D .gitignore
+# ==========================================
 
-# Pliki konfiguracyjne/serwisowe Visual Studio
+# --- Visual Studio user-specific files ---
+.vs/
 *.suo
 *.user
-*.ncb
-*.opensdf
-*.sdf
-*.tlog
+*.userosscache
+*.sln.docstates
 
-# Foldery kompilacji i wyjscia
+# --- Build folders ---
+[Bb]uild/
 [Dd]ebug/
 [Rr]elease/
 x64/
-out/ # <-- DODAJ TÊ LINIÊ, aby zignorowaæ folder 'out'
-
-# Dodatkowe foldery
+x86/
+out/
 bin/
 obj/
+ipch/
+*.opensdf
+*.sdf
+*.db
+*.opendb
+*.cachefile
+
+# --- Compiler and intermediate files ---
+*.obj
+*.pdb
+*.idb
+*.ilk
+*.log
+*.tlog
+*.lastbuildstate
+*.pch
+*.res
+*.exp
+*.lib
+*.exe
+*.dll
+*.manifest
+*.ninja
+*.rsp
+
+# --- CMake generated files ---
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.cmake
+Testing/
+
+# --- ImGui / app temporary files ---
+imgui.ini
+
+# --- Editor / system files ---
+*.swp
+*.swo
+*.bak
+*.tmp
+*.log
+*.psd
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- JetBrains / VSCode (opcjonalnie) ---
+.idea/
+.vscode/
+*.code-workspace
+
+# --- Backup / crash dumps ---
+*.dmp
+*.stackdump
+
+# --- Optional local folders ---
+vendor/

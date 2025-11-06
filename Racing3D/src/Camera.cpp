@@ -1,12 +1,12 @@
-// src/Camera.cpp
+Ôªø// src/Camera.cpp
 #include "Camera.h"
 #include <iostream>
 
-// --- KONIECZNA DYREKTYWA DLA UØYWANIA MODU£”W GTX (NAPRAWA B£ DU #error) ---
+// --- KONIECZNA DYREKTYWA DLA U≈ªYWANIA MODU≈Å√ìW GTX (NAPRAWA B≈ÅƒòDU #error) ---
 #define GLM_ENABLE_EXPERIMENTAL 
 // -------------------------------------------------------------------------
 
-// Do≥πczanie nag≥ÛwkÛw GLM (muszπ byÊ pod #define)
+// Do≈ÇƒÖczanie nag≈Ç√≥wk√≥w GLM (muszƒÖ byƒá pod #define)
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -23,16 +23,16 @@ Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch)
 }
 
 void Camera::updateCameraVectors() {
-    // Obliczanie nowego wektora Front na podstawie kπtÛw Eulera
+    // Obliczanie nowego wektora Front na podstawie kƒÖt√≥w Eulera
     glm::vec3 front;
     front.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
     front.y = sin(glm::radians(Pitch));
     front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
     Front = glm::normalize(front);
 
-    // Obliczanie wektorÛw Right i Up
-    // UWAGA: Right powinno byÊ zmiennπ sk≥adowπ w Camera.h.
-    // Uøywamy lokalnej kopii dla bezpieczeÒstwa kompilacji.
+    // Obliczanie wektor√≥w Right i Up
+    // UWAGA: Right powinno byƒá zmiennƒÖ sk≈ÇadowƒÖ w Camera.h.
+    // U≈ºywamy lokalnej kopii dla bezpiecze≈Ñstwa kompilacji.
     glm::vec3 Right = glm::normalize(glm::cross(Front, WorldUp));
 
     // Obliczenie wektora Up:
@@ -40,7 +40,7 @@ void Camera::updateCameraVectors() {
 }
 
 glm::mat4 Camera::GetViewMatrix() const {
-    // Funckja LookAt: pozycja kamery, punkt na ktÛry patrzy (cel), wektor "w gÛrÍ"
+    // Funckja LookAt: pozycja kamery, punkt na kt√≥ry patrzy (cel), wektor "w g√≥rƒô"
     return glm::lookAt(Position, Position + Front, Up);
 }
 
@@ -49,21 +49,21 @@ glm::mat4 Camera::GetProjectionMatrix(float aspectRatio) const {
 }
 
 void Camera::FollowCar(const glm::vec3& carPosition, const glm::vec3& carFrontVector) {
-    float distance = 4.0f; // Odleg≥oúÊ kamery od samochodu
-    float height = 2.0f;    // WysokoúÊ kamery
+    float distance = 4.0f; // Odleg≈Ço≈õƒá kamery od samochodu
+    float height = 2.0f;    // Wysoko≈õƒá kamery
 
-    // 1. Obliczanie docelowej pozycji kamery (za samochodem i nieco wyøej)
+    // 1. Obliczanie docelowej pozycji kamery (za samochodem i nieco wy≈ºej)
     glm::vec3 desiredPosition = carPosition - glm::normalize(carFrontVector) * distance;
     desiredPosition.y += height;
 
-    // 2. P≥ynne przejúcie kamery (dla profesjonalnego efektu)
-    float smoothness = 0.1f; // Im mniejsza, tym p≥ynniejsza
+    // 2. P≈Çynne przej≈õcie kamery (dla profesjonalnego efektu)
+    float smoothness = 0.1f; // Im mniejsza, tym p≈Çynniejsza
     Position = glm::mix(Position, desiredPosition, smoothness);
 
-    // 3. Ustawienie celu, na ktÛry kamera patrzy (celujemy w samochÛd)
+    // 3. Ustawienie celu, na kt√≥ry kamera patrzy (celujemy w samoch√≥d)
     Front = glm::normalize(carPosition - Position);
 
-    // updateCameraVectors() nie jest konieczne, jeúli polegasz na glm::lookAt
-    // w GetViewMatrix, ale zostawiamy opcjonalnie, jeúli to wp≥ywa na logikÍ.
+    // updateCameraVectors() nie jest konieczne, je≈õli polegasz na glm::lookAt
+    // w GetViewMatrix, ale zostawiamy opcjonalnie, je≈õli to wp≈Çywa na logikƒô.
     // updateCameraVectors(); 
 }

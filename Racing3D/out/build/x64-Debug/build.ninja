@@ -50,47 +50,101 @@ cmake_ninja_workdir = C$:\Users\andri\Racing3D\Racing3D\out\build\x64-Debug\
 build cmake_object_order_depends_target_Racing3D: phony || .
 
 build CMakeFiles\Racing3D.dir\src\Camera.cpp.obj: CXX_COMPILER__Racing3D_unscanned_Debug C$:\Users\andri\Racing3D\Racing3D\src\Camera.cpp || cmake_object_order_depends_target_Racing3D
-  DEFINES = -DGLFW_DLL
+  DEFINES = -DGLFW_DLL -DIMGUI_IMPL_OPENGL_LOADER_GLAD
   FLAGS = /DWIN32 /D_WINDOWS /GR /EHsc /Zi /Ob0 /Od /RTC1 -std:c++17 -MDd
-  INCLUDES = -external:IC:\Users\andri\vcpkg\installed\x64-windows\include -external:W0
+  INCLUDES = -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui\backends -external:IC:\Users\andri\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\Racing3D.dir
   OBJECT_FILE_DIR = CMakeFiles\Racing3D.dir\src
   TARGET_COMPILE_PDB = CMakeFiles\Racing3D.dir\
   TARGET_PDB = Racing3D.pdb
 
 build CMakeFiles\Racing3D.dir\src\Car.cpp.obj: CXX_COMPILER__Racing3D_unscanned_Debug C$:\Users\andri\Racing3D\Racing3D\src\Car.cpp || cmake_object_order_depends_target_Racing3D
-  DEFINES = -DGLFW_DLL
+  DEFINES = -DGLFW_DLL -DIMGUI_IMPL_OPENGL_LOADER_GLAD
   FLAGS = /DWIN32 /D_WINDOWS /GR /EHsc /Zi /Ob0 /Od /RTC1 -std:c++17 -MDd
-  INCLUDES = -external:IC:\Users\andri\vcpkg\installed\x64-windows\include -external:W0
+  INCLUDES = -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui\backends -external:IC:\Users\andri\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\Racing3D.dir
   OBJECT_FILE_DIR = CMakeFiles\Racing3D.dir\src
   TARGET_COMPILE_PDB = CMakeFiles\Racing3D.dir\
   TARGET_PDB = Racing3D.pdb
 
 build CMakeFiles\Racing3D.dir\src\Shader.cpp.obj: CXX_COMPILER__Racing3D_unscanned_Debug C$:\Users\andri\Racing3D\Racing3D\src\Shader.cpp || cmake_object_order_depends_target_Racing3D
-  DEFINES = -DGLFW_DLL
+  DEFINES = -DGLFW_DLL -DIMGUI_IMPL_OPENGL_LOADER_GLAD
   FLAGS = /DWIN32 /D_WINDOWS /GR /EHsc /Zi /Ob0 /Od /RTC1 -std:c++17 -MDd
-  INCLUDES = -external:IC:\Users\andri\vcpkg\installed\x64-windows\include -external:W0
+  INCLUDES = -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui\backends -external:IC:\Users\andri\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\Racing3D.dir
   OBJECT_FILE_DIR = CMakeFiles\Racing3D.dir\src
   TARGET_COMPILE_PDB = CMakeFiles\Racing3D.dir\
   TARGET_PDB = Racing3D.pdb
 
 build CMakeFiles\Racing3D.dir\src\Track.cpp.obj: CXX_COMPILER__Racing3D_unscanned_Debug C$:\Users\andri\Racing3D\Racing3D\src\Track.cpp || cmake_object_order_depends_target_Racing3D
-  DEFINES = -DGLFW_DLL
+  DEFINES = -DGLFW_DLL -DIMGUI_IMPL_OPENGL_LOADER_GLAD
   FLAGS = /DWIN32 /D_WINDOWS /GR /EHsc /Zi /Ob0 /Od /RTC1 -std:c++17 -MDd
-  INCLUDES = -external:IC:\Users\andri\vcpkg\installed\x64-windows\include -external:W0
+  INCLUDES = -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui\backends -external:IC:\Users\andri\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\Racing3D.dir
   OBJECT_FILE_DIR = CMakeFiles\Racing3D.dir\src
   TARGET_COMPILE_PDB = CMakeFiles\Racing3D.dir\
   TARGET_PDB = Racing3D.pdb
 
 build CMakeFiles\Racing3D.dir\src\main.cpp.obj: CXX_COMPILER__Racing3D_unscanned_Debug C$:\Users\andri\Racing3D\Racing3D\src\main.cpp || cmake_object_order_depends_target_Racing3D
-  DEFINES = -DGLFW_DLL
+  DEFINES = -DGLFW_DLL -DIMGUI_IMPL_OPENGL_LOADER_GLAD
   FLAGS = /DWIN32 /D_WINDOWS /GR /EHsc /Zi /Ob0 /Od /RTC1 -std:c++17 -MDd
-  INCLUDES = -external:IC:\Users\andri\vcpkg\installed\x64-windows\include -external:W0
+  INCLUDES = -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui\backends -external:IC:\Users\andri\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\Racing3D.dir
   OBJECT_FILE_DIR = CMakeFiles\Racing3D.dir\src
+  TARGET_COMPILE_PDB = CMakeFiles\Racing3D.dir\
+  TARGET_PDB = Racing3D.pdb
+
+build CMakeFiles\Racing3D.dir\vendor\imgui\imgui.cpp.obj: CXX_COMPILER__Racing3D_unscanned_Debug C$:\Users\andri\Racing3D\Racing3D\vendor\imgui\imgui.cpp || cmake_object_order_depends_target_Racing3D
+  DEFINES = -DGLFW_DLL -DIMGUI_IMPL_OPENGL_LOADER_GLAD
+  FLAGS = /DWIN32 /D_WINDOWS /GR /EHsc /Zi /Ob0 /Od /RTC1 -std:c++17 -MDd
+  INCLUDES = -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui\backends -external:IC:\Users\andri\vcpkg\installed\x64-windows\include -external:W0
+  OBJECT_DIR = CMakeFiles\Racing3D.dir
+  OBJECT_FILE_DIR = CMakeFiles\Racing3D.dir\vendor\imgui
+  TARGET_COMPILE_PDB = CMakeFiles\Racing3D.dir\
+  TARGET_PDB = Racing3D.pdb
+
+build CMakeFiles\Racing3D.dir\vendor\imgui\imgui_draw.cpp.obj: CXX_COMPILER__Racing3D_unscanned_Debug C$:\Users\andri\Racing3D\Racing3D\vendor\imgui\imgui_draw.cpp || cmake_object_order_depends_target_Racing3D
+  DEFINES = -DGLFW_DLL -DIMGUI_IMPL_OPENGL_LOADER_GLAD
+  FLAGS = /DWIN32 /D_WINDOWS /GR /EHsc /Zi /Ob0 /Od /RTC1 -std:c++17 -MDd
+  INCLUDES = -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui\backends -external:IC:\Users\andri\vcpkg\installed\x64-windows\include -external:W0
+  OBJECT_DIR = CMakeFiles\Racing3D.dir
+  OBJECT_FILE_DIR = CMakeFiles\Racing3D.dir\vendor\imgui
+  TARGET_COMPILE_PDB = CMakeFiles\Racing3D.dir\
+  TARGET_PDB = Racing3D.pdb
+
+build CMakeFiles\Racing3D.dir\vendor\imgui\imgui_widgets.cpp.obj: CXX_COMPILER__Racing3D_unscanned_Debug C$:\Users\andri\Racing3D\Racing3D\vendor\imgui\imgui_widgets.cpp || cmake_object_order_depends_target_Racing3D
+  DEFINES = -DGLFW_DLL -DIMGUI_IMPL_OPENGL_LOADER_GLAD
+  FLAGS = /DWIN32 /D_WINDOWS /GR /EHsc /Zi /Ob0 /Od /RTC1 -std:c++17 -MDd
+  INCLUDES = -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui\backends -external:IC:\Users\andri\vcpkg\installed\x64-windows\include -external:W0
+  OBJECT_DIR = CMakeFiles\Racing3D.dir
+  OBJECT_FILE_DIR = CMakeFiles\Racing3D.dir\vendor\imgui
+  TARGET_COMPILE_PDB = CMakeFiles\Racing3D.dir\
+  TARGET_PDB = Racing3D.pdb
+
+build CMakeFiles\Racing3D.dir\vendor\imgui\imgui_tables.cpp.obj: CXX_COMPILER__Racing3D_unscanned_Debug C$:\Users\andri\Racing3D\Racing3D\vendor\imgui\imgui_tables.cpp || cmake_object_order_depends_target_Racing3D
+  DEFINES = -DGLFW_DLL -DIMGUI_IMPL_OPENGL_LOADER_GLAD
+  FLAGS = /DWIN32 /D_WINDOWS /GR /EHsc /Zi /Ob0 /Od /RTC1 -std:c++17 -MDd
+  INCLUDES = -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui\backends -external:IC:\Users\andri\vcpkg\installed\x64-windows\include -external:W0
+  OBJECT_DIR = CMakeFiles\Racing3D.dir
+  OBJECT_FILE_DIR = CMakeFiles\Racing3D.dir\vendor\imgui
+  TARGET_COMPILE_PDB = CMakeFiles\Racing3D.dir\
+  TARGET_PDB = Racing3D.pdb
+
+build CMakeFiles\Racing3D.dir\vendor\imgui\backends\imgui_impl_glfw.cpp.obj: CXX_COMPILER__Racing3D_unscanned_Debug C$:\Users\andri\Racing3D\Racing3D\vendor\imgui\backends\imgui_impl_glfw.cpp || cmake_object_order_depends_target_Racing3D
+  DEFINES = -DGLFW_DLL -DIMGUI_IMPL_OPENGL_LOADER_GLAD
+  FLAGS = /DWIN32 /D_WINDOWS /GR /EHsc /Zi /Ob0 /Od /RTC1 -std:c++17 -MDd
+  INCLUDES = -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui\backends -external:IC:\Users\andri\vcpkg\installed\x64-windows\include -external:W0
+  OBJECT_DIR = CMakeFiles\Racing3D.dir
+  OBJECT_FILE_DIR = CMakeFiles\Racing3D.dir\vendor\imgui\backends
+  TARGET_COMPILE_PDB = CMakeFiles\Racing3D.dir\
+  TARGET_PDB = Racing3D.pdb
+
+build CMakeFiles\Racing3D.dir\vendor\imgui\backends\imgui_impl_opengl3.cpp.obj: CXX_COMPILER__Racing3D_unscanned_Debug C$:\Users\andri\Racing3D\Racing3D\vendor\imgui\backends\imgui_impl_opengl3.cpp || cmake_object_order_depends_target_Racing3D
+  DEFINES = -DGLFW_DLL -DIMGUI_IMPL_OPENGL_LOADER_GLAD
+  FLAGS = /DWIN32 /D_WINDOWS /GR /EHsc /Zi /Ob0 /Od /RTC1 -std:c++17 -MDd
+  INCLUDES = -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui -IC:\Users\andri\Racing3D\Racing3D\vendor\imgui\backends -external:IC:\Users\andri\vcpkg\installed\x64-windows\include -external:W0
+  OBJECT_DIR = CMakeFiles\Racing3D.dir
+  OBJECT_FILE_DIR = CMakeFiles\Racing3D.dir\vendor\imgui\backends
   TARGET_COMPILE_PDB = CMakeFiles\Racing3D.dir\
   TARGET_PDB = Racing3D.pdb
 
@@ -102,7 +156,7 @@ build CMakeFiles\Racing3D.dir\src\main.cpp.obj: CXX_COMPILER__Racing3D_unscanned
 #############################################
 # Link the executable Racing3D.exe
 
-build Racing3D.exe: CXX_EXECUTABLE_LINKER__Racing3D_Debug CMakeFiles\Racing3D.dir\src\Camera.cpp.obj CMakeFiles\Racing3D.dir\src\Car.cpp.obj CMakeFiles\Racing3D.dir\src\Shader.cpp.obj CMakeFiles\Racing3D.dir\src\Track.cpp.obj CMakeFiles\Racing3D.dir\src\main.cpp.obj | C$:\Users\andri\vcpkg\installed\x64-windows\debug\lib\glfw3dll.lib C$:\Users\andri\vcpkg\installed\x64-windows\debug\lib\glad.lib C$:\Users\andri\vcpkg\installed\x64-windows\debug\lib\glm.lib
+build Racing3D.exe: CXX_EXECUTABLE_LINKER__Racing3D_Debug CMakeFiles\Racing3D.dir\src\Camera.cpp.obj CMakeFiles\Racing3D.dir\src\Car.cpp.obj CMakeFiles\Racing3D.dir\src\Shader.cpp.obj CMakeFiles\Racing3D.dir\src\Track.cpp.obj CMakeFiles\Racing3D.dir\src\main.cpp.obj CMakeFiles\Racing3D.dir\vendor\imgui\imgui.cpp.obj CMakeFiles\Racing3D.dir\vendor\imgui\imgui_draw.cpp.obj CMakeFiles\Racing3D.dir\vendor\imgui\imgui_widgets.cpp.obj CMakeFiles\Racing3D.dir\vendor\imgui\imgui_tables.cpp.obj CMakeFiles\Racing3D.dir\vendor\imgui\backends\imgui_impl_glfw.cpp.obj CMakeFiles\Racing3D.dir\vendor\imgui\backends\imgui_impl_opengl3.cpp.obj | C$:\Users\andri\vcpkg\installed\x64-windows\debug\lib\glfw3dll.lib C$:\Users\andri\vcpkg\installed\x64-windows\debug\lib\glad.lib C$:\Users\andri\vcpkg\installed\x64-windows\debug\lib\glm.lib
   FLAGS = /DWIN32 /D_WINDOWS /GR /EHsc /Zi /Ob0 /Od /RTC1 -MDd
   LINK_FLAGS = /machine:x64 /debug /INCREMENTAL /subsystem:console
   LINK_LIBRARIES = C:\Users\andri\vcpkg\installed\x64-windows\debug\lib\glfw3dll.lib  C:\Users\andri\vcpkg\installed\x64-windows\debug\lib\glad.lib  C:\Users\andri\vcpkg\installed\x64-windows\debug\lib\glm.lib  opengl32.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib
