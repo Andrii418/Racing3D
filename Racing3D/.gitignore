@@ -75,4 +75,6 @@ desktop.ini
 *.stackdump
 
 # --- Optional local folders ---
-vendor/
+vendor/*
+!vendor/imgui/
+
