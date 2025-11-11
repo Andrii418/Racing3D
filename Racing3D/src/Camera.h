@@ -18,6 +18,8 @@ public:
     float Yaw;
     float Pitch;
     float Zoom;
+    // Potrzebujemy też Right dla updateCameraVectors, ale nie jest kluczowy dla tej logiki.
+    // Jeśli go nie masz, używaj lokalnie w Camera.cpp.
 
     Camera(glm::vec3 position, glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH);
 
@@ -26,6 +28,10 @@ public:
 
     // KLUCZOWA METODA: Zapewnia widok zza samochodu
     void FollowCar(const glm::vec3& carPosition, const glm::vec3& carFrontVector);
+
+    // --- NOWA METODA DLA ANIMACJI TŁA W MENU ---
+    void LookAt(const glm::vec3& centerPoint, float yawRotation);
+    // ------------------------------------------
 
 private:
     void updateCameraVectors();

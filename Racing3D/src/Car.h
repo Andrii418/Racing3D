@@ -1,3 +1,4 @@
+// src/Car.h
 #pragma once
 
 #include <glm/glm.hpp>
@@ -19,7 +20,7 @@ public:
     float MaxSpeed = 10.0f; // Maksymalna prêdkoœæ
     float Acceleration = 5.0f; // Przyspieszenie
     float Braking = 10.0f;     // Si³a hamowania
-    float TurnRate = 1.5f;   // Szybkoœæ skrêtu (w radianach/sekundê)
+    float TurnRate = 1.5f;    // Szybkoœæ skrêtu (w radianach/sekundê)
 
     // Dane do renderowania (VAO/VBO)
     unsigned int VAO;
@@ -30,9 +31,12 @@ public:
 
     // Metody
     void ProcessInput(float deltaTime); // Obs³uga wciœniêtych klawiszy (W/S/A/D)
-    void Update(float deltaTime);       // Obliczenia fizyczne i aktualizacja pozycji
-    void Draw(const Shader& shader);    // Renderowanie geometrii
-    glm::mat4 GetModelMatrix() const;   // Zwraca macierz Modelu
+    void Update(float deltaTime);        // Obliczenia fizyczne i aktualizacja pozycji
+
+    // Zaktualizowana deklaracja Draw (z opcjonaln¹ pozycj¹ i rotacj¹ dla menu)
+    void Draw(const Shader& shader, glm::vec3 pos = glm::vec3(0.0f), float yaw = 0.0f) const;
+
+    glm::mat4 GetModelMatrix() const;    // Zwraca macierz Modelu (dla trybu jazdy)
 
 private:
     void setupMesh(); // Inicjalizacja VAO/VBO i wierzcho³ków

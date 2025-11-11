@@ -6,7 +6,7 @@
 #define GLM_ENABLE_EXPERIMENTAL 
 // -------------------------------------------------------------------------
 
-// Dołączanie nagłówków GLM (muszą być pod #define)
+// Dołączanie nagłówków GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -31,11 +31,7 @@ void Camera::updateCameraVectors() {
     Front = glm::normalize(front);
 
     // Obliczanie wektorów Right i Up
-    // UWAGA: Right powinno być zmienną składową w Camera.h.
-    // Używamy lokalnej kopii dla bezpieczeństwa kompilacji.
     glm::vec3 Right = glm::normalize(glm::cross(Front, WorldUp));
-
-    // Obliczenie wektora Up:
     Up = glm::normalize(glm::cross(Right, Front));
 }
 
@@ -46,6 +42,21 @@ glm::mat4 Camera::GetViewMatrix() const {
 
 glm::mat4 Camera::GetProjectionMatrix(float aspectRatio) const {
     return glm::perspective(glm::radians(Zoom), aspectRatio, 0.1f, 100.0f);
+}
+
+// Nowa metoda dla menu (symuluje obrót tła)
+void Camera::LookAt(const glm::vec3& centerPoint, float yawRotation) {
+    // W tej metodzie ustawiamy kamerę tak, aby obracała się na stałej pozycji,
+    // tworząc iluzję ruchu tła.
+
+    // 1. Ustawienie kąta YAW na podstawie rotacji tła
+    this->Yaw = yawRotation - 90.0f; // -90.0f by dopasować do standardu OpenGL
+
+    // 2. Utrzymanie stałego kąta PITCH (patrzenie lekko w dół)
+    this->Pitch = -15.0f;
+
+    // 3. Przerysowanie wektora Front (kierunku, na który patrzy kamera)
+    updateCameraVectors();
 }
 
 void Camera::FollowCar(const glm::vec3& carPosition, const glm::vec3& carFrontVector) {
@@ -60,10 +71,10 @@ void Camera::FollowCar(const glm::vec3& carPosition, const glm::vec3& carFrontVe
     float smoothness = 0.1f; // Im mniejsza, tym płynniejsza
     Position = glm::mix(Position, desiredPosition, smoothness);
 
-    // 3. Ustawienie celu, na który kamera patrzy (celujemy w samochód)
-    Front = glm::normalize(carPosition - Position);
+    // 3. Ustawienie kierunku, na który kamera patrzy (patrzymy na samochód)
+    glm::vec3 lookAtTarget = carPosition + glm::vec3(0.0f, 0.5f, 0.0f);
+    Front = glm::normalize(lookAtTarget - Position);
 
-    // updateCameraVectors() nie jest konieczne, jeśli polegasz na glm::lookAt
-    // w GetViewMatrix, ale zostawiamy opcjonalnie, jeśli to wpływa na logikę.
-    // updateCameraVectors(); 
+    // Ponieważ Front jest teraz ustawiony, GetViewMatrix użyje go poprawnie.
+    // Nie musimy aktualizować YAW/PITCH, ponieważ nie używamy sterowania myszą.
 }

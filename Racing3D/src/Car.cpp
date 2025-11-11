@@ -2,6 +2,7 @@
 #include "Car.h"
 #include "Shader.h"
 #include <glm/gtc/matrix_transform.hpp>
+#include <cmath> // Do u¿ycia std::abs
 
 // Wierzcho³ki szeœcianu z NORMALNYMI (6 floatów na wierzcho³ek: Pos X,Y,Z | Norm X,Y,Z)
 float carVertices[] = {
@@ -113,8 +114,23 @@ glm::mat4 Car::GetModelMatrix() const {
     return model;
 }
 
-void Car::Draw(const Shader& shader) {
-    shader.setMat4("model", GetModelMatrix());
+// Zmodyfikowana funkcja Draw
+void Car::Draw(const Shader& shader, glm::vec3 pos, float yaw) const {
+    glm::mat4 model = glm::mat4(1.0f);
+
+    // Sprawdzenie, czy podano niestandardowe parametry (dla renderowania w menu)
+    if (glm::length(pos) > 0.001f || std::abs(yaw) > 0.001f) {
+        // Rysowanie w menu: u¿yj podanych pos i yaw
+        model = glm::translate(model, pos);
+        model = glm::rotate(model, glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(1.0f, 0.5f, 2.0f)); // Skalowanie
+    }
+    else {
+        // Rysowanie w grze: u¿yj standardowej macierzy modelu
+        model = GetModelMatrix();
+    }
+
+    shader.setMat4("model", model);
 
     glBindVertexArray(VAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
