@@ -48,6 +48,9 @@ GameState currentState = SPLASH_SCREEN;
 float splashTimer = 0.0f;
 glm::vec3 carCustomColor = glm::vec3(1.0f, 0.5f, 0.2f);
 
+bool cockpitView = false; // false = widok zza auta, true = z kokpitu
+
+
 // Sub-Menu States
 bool showSettings = false;
 bool showCarSelect = false;
@@ -97,6 +100,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         else if (action == GLFW_RELEASE)
             keys[key] = false;
     }
+    if (key == GLFW_KEY_C && action == GLFW_PRESS) {
+        cockpitView = !cockpitView;
+    }
+
 
     handling = false;
 }
@@ -613,16 +620,40 @@ int main() {
             car->Update(deltaTime);
         }
 
+        ///if (camera && car) {
+           /// if (currentState == RACING) {
+               /// camera->FollowCar(car->Position, car->FrontVector);
+           /// }
+           /// else {
+                // Background camera logic for the menu
+               /// camera->Position = glm::vec3(0.0f, 2.5f, 5.0f);
+                // camera->LookAt(glm::vec3(0.0f, 0.5f, 0.0f), backgroundYaw); 
+            ///}
+       /// }
+
+
         if (camera && car) {
             if (currentState == RACING) {
-                camera->FollowCar(car->Position, car->FrontVector);
+                if (cockpitView) {
+                    // 🎯 Widok z kokpitu
+                    glm::vec3 cockpitOffset(0.0f, 0.7f, 0.2f); // pozycja kamery wewnątrz auta
+                    camera->Position = car->Position
+                        + car->FrontVector * cockpitOffset.z
+                        + glm::vec3(0.0f, cockpitOffset.y, 0.0f);
+                    camera->Front = glm::normalize(car->FrontVector);
+                }
+                else {
+                    // 🚗 Widok zza samochodu
+                    camera->FollowCar(car->Position, car->FrontVector);
+                }
             }
             else {
-                // Background camera logic for the menu
+                // Kamera menu
                 camera->Position = glm::vec3(0.0f, 2.5f, 5.0f);
-                // camera->LookAt(glm::vec3(0.0f, 0.5f, 0.0f), backgroundYaw); 
+                // camera->LookAt(glm::vec3(0.0f, 0.5f, 0.0f), backgroundYaw);
             }
         }
+
 
         // --------------------------------------------------
         // 1. RENDER 3D SCENE TO FRAMEBUFFER (Off-screen)
@@ -700,6 +731,8 @@ int main() {
             ImGui::Begin("HUD", nullptr,
                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
             ImGui::Text("Speed: %.1f km/h", glm::length(car->Velocity) * 3.6f);
+            ImGui::Text("View: %s", cockpitView ? "Cockpit" : "Chase");
+
             ImGui::End();
         }
 
