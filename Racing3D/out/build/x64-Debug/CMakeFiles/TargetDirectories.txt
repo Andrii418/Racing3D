@@ -1,3 +1,0 @@
-C:/Users/andri/Racing3D/Racing3D/out/build/x64-Debug/CMakeFiles/Racing3D.dir
-C:/Users/andri/Racing3D/Racing3D/out/build/x64-Debug/CMakeFiles/edit_cache.dir
-C:/Users/andri/Racing3D/Racing3D/out/build/x64-Debug/CMakeFiles/rebuild_cache.dir
