@@ -26,7 +26,6 @@ ipch/
 *.cachefile
 
 # --- Compiler and intermediate files ---
-*.obj
 *.pdb
 *.idb
 *.ilk

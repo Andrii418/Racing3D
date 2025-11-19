@@ -29,25 +29,21 @@ bool Camaro::loadModel(const std::string& modelPath) {
         iss >> prefix;
 
         if (prefix == "v") {
-            // vertex
             glm::vec3 vertex;
             iss >> vertex.x >> vertex.y >> vertex.z;
             temp_vertices.push_back(vertex);
         }
         else if (prefix == "vn") {
-            // normal
             glm::vec3 normal;
             iss >> normal.x >> normal.y >> normal.z;
             temp_normals.push_back(normal);
         }
         else if (prefix == "vt") {
-            // texture coordinate
             glm::vec2 texcoord;
             iss >> texcoord.x >> texcoord.y;
             temp_texcoords.push_back(texcoord);
         }
         else if (prefix == "f") {
-            // face
             std::string v1, v2, v3, v4;
             iss >> v1 >> v2 >> v3 >> v4;
 
@@ -172,17 +168,14 @@ void Camaro::setupMesh() {
 
     std::vector<float> vertexData;
     for (size_t i = 0; i < vertices.size(); ++i) {
-        // Pozycja
         vertexData.push_back(vertices[i].x);
         vertexData.push_back(vertices[i].y);
         vertexData.push_back(vertices[i].z);
 
-        // Normalna
         vertexData.push_back(normals[i].x);
         vertexData.push_back(normals[i].y);
         vertexData.push_back(normals[i].z);
 
-        // Współrzędne tekstury
         vertexData.push_back(texCoords[i].x);
         vertexData.push_back(texCoords[i].y);
     }
@@ -191,19 +184,15 @@ void Camaro::setupMesh() {
     glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(float),
         vertexData.data(), GL_STATIC_DRAW);
 
-    // Atrybut 0: Pozycja
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 
-    // Atrybut 1: Normalna
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
 
-    // Atrybut 2: Współrzędne tekstury
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 
-    // Element buffer
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int),
         indices.data(), GL_STATIC_DRAW);
@@ -242,7 +231,6 @@ void Camaro::Draw(const Shader& shader, glm::vec3 pos, float yaw) const {
 
     shader.setMat4("model", model);
 
-    // Ustaw flagę że używamy tekstur
     shader.setBool("useTexture", true);
 
     glBindVertexArray(VAO);

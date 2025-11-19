@@ -10,38 +10,28 @@
 
 #include "Shader.h"
 #include "Camera.h"
-//#include "Car.h"
 #include "Camaro.h"
-
 #include "Track.h"
 
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
-#include "imgui_internal.h" // Needed for advanced styling/draw list manipulation
+#include "imgui_internal.h"
 
-// Note: Since we are not using custom fonts now, we will rely on
-// the default ASCII font.
-
-// -------------------------------------------------------------
 const unsigned int SCR_WIDTH = 1280;
 const unsigned int SCR_HEIGHT = 720;
 
-// Framebuffer and Post-Processing Variables
 unsigned int FBO_Scene;
 unsigned int textureColorBuffer;
 unsigned int RBO_DepthStencil;
 unsigned int quadVAO, quadVBO;
 
-// Game States
 enum GameState {
     SPLASH_SCREEN,
     MAIN_MENU,
     RACING
 };
 
-// Global Variables
-//Car* car = nullptr;
 Camaro* car = nullptr;
 Camera* camera = nullptr;
 Track* track = nullptr;
@@ -51,29 +41,23 @@ GameState currentState = SPLASH_SCREEN;
 float splashTimer = 0.0f;
 glm::vec3 carCustomColor = glm::vec3(1.0f, 0.5f, 0.2f);
 
-bool cockpitView = false; // false = widok zza auta, true = z kokpitu
+bool cockpitView = false;
 
-
-// Sub-Menu States
 bool showSettings = false;
 bool showCarSelect = false;
 bool showTrackSelect = false;
 int selectedCar = 0;
 int selectedTrack = 0;
-float timeOfDay = 0.75f; // Default to "Dusk"
+float timeOfDay = 0.75f;
 
-// Menu Animation Variables
 float carMenuRotation = 0.0f;
 glm::vec3 menuCarPosition = glm::vec3(0.0f, 0.5f, 0.0f);
 float backgroundYaw = 0.0f;
 
-// -------------------------------------------------------------
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-// -------------------------------------------------------------
-// Input
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     static bool handling = false;
     if (handling) return;
@@ -107,11 +91,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         cockpitView = !cockpitView;
     }
 
-
     handling = false;
 }
 
-// -------------------------------------------------------------
 void processCarInput(float deltaTime) {
     if (!car || currentState != RACING) return;
 
@@ -138,11 +120,8 @@ void processCarInput(float deltaTime) {
         car->FrontVector = glm::vec3(0.0f, 0.0f, 1.0f);
 }
 
-// -------------------------------------------------------------
-// Initialization of the fullscreen quad for Post-processing
 void setupPostProcessingQuad() {
     float quadVertices[] = {
-        // Positions   // Texture Coords
         -1.0f,  1.0f,  0.0f, 1.0f,
         -1.0f, -1.0f,  0.0f, 0.0f,
          1.0f, -1.0f,  1.0f, 0.0f,
@@ -153,7 +132,7 @@ void setupPostProcessingQuad() {
     };
     glGenVertexArrays(1, &quadVAO);
     glGenBuffers(1, &quadVBO);
-    glBindVertexArray(quadVAO); // FIXED: quadVAA changed to quadVAO
+    glBindVertexArray(quadVAO);
     glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
@@ -162,8 +141,6 @@ void setupPostProcessingQuad() {
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 }
 
-// -------------------------------------------------------------
-// Framebuffer Initialization
 void setupFramebuffer() {
     glGenFramebuffers(1, &FBO_Scene);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO_Scene);
@@ -186,9 +163,6 @@ void setupFramebuffer() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-
-// -------------------------------------------------------------
-// ImGui – Splash Screen
 void RenderSplashScreen() {
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImVec2(SCR_WIDTH, SCR_HEIGHT));
@@ -215,32 +189,26 @@ void RenderSplashScreen() {
     ImGui::End();
 }
 
-
-// -------------------------------------------------------------
-// Car Select Menu (Styled)
 void RenderCarSelectMenu() {
     ImGui::SetNextWindowPos(ImVec2(SCR_WIDTH * 0.5f, SCR_HEIGHT * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
     ImGui::SetNextWindowSize(ImVec2(500, 450));
     ImGui::Begin("Car Select Menu", &showCarSelect,
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
 
-    // Draw dark background
     ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetWindowPos(),
         ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y + ImGui::GetWindowSize().y),
         IM_COL32(0, 0, 0, 220));
 
-    // Draw blue accent bar
     ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetWindowPos(),
         ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y + 10),
         IM_COL32(25, 127, 255, 255));
 
-    ImGui::Dummy(ImVec2(0, 10)); // Offset after accent bar
+    ImGui::Dummy(ImVec2(0, 10));
 
     ImGui::TextColored(ImVec4(0.1f, 0.5f, 1.0f, 1.0f), "  [ GARAGE ]");
     ImGui::Separator();
     ImGui::Spacing();
 
-    // Space for 3D model preview
     ImGui::Dummy(ImVec2(400, 120));
 
     ImGui::Spacing();
@@ -250,7 +218,6 @@ void RenderCarSelectMenu() {
 
     ImGui::Spacing();
 
-    // Car 1 Selection
     ImGui::Columns(2, "CarList", false);
     ImGui::SetColumnWidth(0, 250);
     if (ImGui::Selectable(carNames[0], selectedCar == 0, ImGuiSelectableFlags_AllowDoubleClick, ImVec2(0, 40))) {
@@ -261,11 +228,9 @@ void RenderCarSelectMenu() {
     ImGui::Columns(1);
     ImGui::Separator();
 
-    // Car 2 Selection (Locked)
     ImGui::Columns(2, "CarList2", false);
     ImGui::SetColumnWidth(0, 250);
     if (ImGui::Selectable(carNames[1], selectedCar == 1, ImGuiSelectableFlags_Disabled | ImGuiSelectableFlags_AllowDoubleClick, ImVec2(0, 40))) {
-        // Locked - do nothing
     }
     ImGui::NextColumn();
     ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "LOCKED\nRequires Level 5");
@@ -274,7 +239,6 @@ void RenderCarSelectMenu() {
 
     ImGui::Spacing();
 
-    // Color Picker
     float col[3] = { carCustomColor.r, carCustomColor.g, carCustomColor.b };
     ImGui::Text("Car Color:");
     if (ImGui::ColorEdit3("##CarColorPicker", col)) {
@@ -284,7 +248,6 @@ void RenderCarSelectMenu() {
     ImGui::Spacing();
     ImGui::Separator();
 
-    // BACK Button with custom style override
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.15f, 0.18f, 0.9f));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.5f, 1.0f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.05f, 0.45f, 0.9f, 1.0f));
@@ -298,25 +261,21 @@ void RenderCarSelectMenu() {
     ImGui::End();
 }
 
-// -------------------------------------------------------------
-// Track Select Menu (Styled)
 void RenderTrackSelectMenu() {
     ImGui::SetNextWindowPos(ImVec2(SCR_WIDTH * 0.5f, SCR_HEIGHT * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
     ImGui::SetNextWindowSize(ImVec2(500, 350));
     ImGui::Begin("Track Select Menu", &showTrackSelect,
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
 
-    // Draw dark background
     ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetWindowPos(),
         ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y + ImGui::GetWindowSize().y),
         IM_COL32(0, 0, 0, 220));
 
-    // Draw blue accent bar
     ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetWindowPos(),
         ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y + 10),
         IM_COL32(25, 127, 255, 255));
 
-    ImGui::Dummy(ImVec2(0, 10)); // Offset after accent bar
+    ImGui::Dummy(ImVec2(0, 10));
 
     ImGui::TextColored(ImVec4(0.1f, 0.5f, 1.0f, 1.0f), "  [ TRACK SELECTION ]");
     ImGui::Separator();
@@ -343,7 +302,6 @@ void RenderTrackSelectMenu() {
     ImGui::Spacing();
     ImGui::Separator();
 
-    // BACK Button with custom style override
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.15f, 0.18f, 0.9f));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.5f, 1.0f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.05f, 0.45f, 0.9f, 1.0f));
@@ -357,26 +315,21 @@ void RenderTrackSelectMenu() {
     ImGui::End();
 }
 
-
-// -------------------------------------------------------------
-// Settings Menu (Styled)
 void RenderSettingsMenu() {
     ImGui::SetNextWindowPos(ImVec2(SCR_WIDTH * 0.5f, SCR_HEIGHT * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
     ImGui::SetNextWindowSize(ImVec2(400, 300));
     ImGui::Begin("Settings Menu", &showSettings,
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
 
-    // Draw dark background
     ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetWindowPos(),
         ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y + ImGui::GetWindowSize().y),
         IM_COL32(0, 0, 0, 220));
 
-    // Draw blue accent bar
     ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetWindowPos(),
         ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y + 10),
         IM_COL32(25, 127, 255, 255));
 
-    ImGui::Dummy(ImVec2(0, 10)); // Offset after accent bar
+    ImGui::Dummy(ImVec2(0, 10));
 
     ImGui::TextColored(ImVec4(0.1f, 0.5f, 1.0f, 1.0f), "  [ GENERAL SETTINGS ]");
     ImGui::Separator();
@@ -392,7 +345,6 @@ void RenderSettingsMenu() {
     ImGui::Separator();
     ImGui::Spacing();
 
-    // BACK Button with custom style override
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.15f, 0.18f, 0.9f));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.5f, 1.0f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.05f, 0.45f, 0.9f, 1.0f));
@@ -406,11 +358,7 @@ void RenderSettingsMenu() {
     ImGui::End();
 }
 
-
-// -------------------------------------------------------------
-// MAIN MENU (Styled)
 void RenderMainMenu() {
-    // 1. Fullscreen Background (Dimming)
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImVec2(SCR_WIDTH, SCR_HEIGHT));
     ImGui::Begin("Fullscreen Background", nullptr,
@@ -418,10 +366,8 @@ void RenderMainMenu() {
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus |
         ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
 
-    // Dim the entire screen
     ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(0, 0), ImVec2(SCR_WIDTH, SCR_HEIGHT), IM_COL32(0, 0, 0, 180));
 
-    // Render sub-menus if active
     if (showSettings || showCarSelect || showTrackSelect) {
         ImGui::End();
         if (showSettings) RenderSettingsMenu();
@@ -430,32 +376,26 @@ void RenderMainMenu() {
         return;
     }
 
-    // 2. TITLE PANEL (Top 20% of screen)
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImVec2(SCR_WIDTH, SCR_HEIGHT * 0.2f));
     ImGui::Begin("Title Panel", nullptr,
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus);
 
-    // Background for the title bar area
     ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(0, 0), ImVec2(SCR_WIDTH, SCR_HEIGHT * 0.2f), IM_COL32(0, 0, 0, 150));
 
-    // Title Text
     float titleSize = 4.0f;
     ImGui::SetWindowFontScale(titleSize);
 
-    // Calculate X position to center the title
     float titleWidth = ImGui::CalcTextSize("RACING 3D").x;
     ImGui::SetCursorPosX((SCR_WIDTH - titleWidth) * 0.5f);
 
-    // Center Y position in the top panel
     ImGui::SetCursorPosY((SCR_HEIGHT * 0.2f - ImGui::GetTextLineHeightWithSpacing() * titleSize) * 0.5f);
 
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.1f, 0.5f, 1.0f, 1.0f)); // Bright Blue
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.1f, 0.5f, 1.0f, 1.0f));
     ImGui::Text("RACING 3D");
     ImGui::PopStyleColor();
 
-    // Blue accent line below the title
     ImGui::GetWindowDrawList()->AddLine(
         ImVec2(SCR_WIDTH * 0.5f - 150.0f, ImGui::GetCursorScreenPos().y - 10.0f),
         ImVec2(SCR_WIDTH * 0.5f + 150.0f, ImGui::GetCursorScreenPos().y - 10.0f),
@@ -466,7 +406,6 @@ void RenderMainMenu() {
 
     ImGui::End();
 
-    // 3. BUTTONS PANEL (Centered below the title)
     float buttonsPanelHeight = 400.0f;
     float startY = SCR_HEIGHT * 0.2f + (SCR_HEIGHT * 0.8f - buttonsPanelHeight) * 0.5f;
 
@@ -479,10 +418,9 @@ void RenderMainMenu() {
     ImVec2 buttonSize(350, 60);
     float buttonX = (ImGui::GetWindowSize().x - buttonSize.x) * 0.5f;
 
-    // START RACE Button (Primary Accent)
     ImGui::SetCursorPosX(buttonX);
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f)); // White text
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.5f, 1.0f, 1.0f)); // Blue primary color
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.5f, 1.0f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.2f, 0.6f, 1.0f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.05f, 0.45f, 0.9f, 1.0f));
 
@@ -501,7 +439,6 @@ void RenderMainMenu() {
     ImGui::Spacing();
     ImGui::Spacing();
 
-    // Standard Buttons 
     ImGui::SetCursorPosX(buttonX);
     if (ImGui::Button("SELECT CAR", buttonSize)) showCarSelect = true;
 
@@ -521,8 +458,6 @@ void RenderMainMenu() {
     ImGui::End();
 }
 
-
-// -------------------------------------------------------------
 int main() {
     if (!glfwInit()) return -1;
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -542,73 +477,59 @@ int main() {
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) return -1;
     glEnable(GL_DEPTH_TEST);
 
-    // --- ImGui Initialization ---
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-    // --- Custom Dark Style (Matching the accent color) ---
     ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();
 
-    // Set minimal rounding for a modern, flat look
     style.FrameRounding = 0.0f;
     style.GrabRounding = 0.0f;
     style.WindowRounding = 0.0f;
     style.ChildRounding = 0.0f;
     style.ScrollbarRounding = 0.0f;
     style.WindowPadding = ImVec2(0, 0);
-    style.ItemSpacing = ImVec2(8, 10); // Increase spacing between buttons
+    style.ItemSpacing = ImVec2(8, 10);
 
-    // Define custom color palette
-    ImVec4 primaryBgColor = ImVec4(0.1f, 0.15f, 0.18f, 0.9f); // Dark Slate/Blue-Gray
-    ImVec4 hoverColor = ImVec4(0.1f, 0.5f, 1.0f, 1.0f); // Bright Blue
-    ImVec4 activeColor = ImVec4(0.05f, 0.45f, 0.9f, 1.0f); // Slightly darker Blue
+    ImVec4 primaryBgColor = ImVec4(0.1f, 0.15f, 0.18f, 0.9f);
+    ImVec4 hoverColor = ImVec4(0.1f, 0.5f, 1.0f, 1.0f);
+    ImVec4 activeColor = ImVec4(0.05f, 0.45f, 0.9f, 1.0f);
 
-    // Apply colors to controls
-    style.Colors[ImGuiCol_WindowBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f); // Window background transparent for fullscreen menus
+    style.Colors[ImGuiCol_WindowBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
     style.Colors[ImGuiCol_FrameBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
     style.Colors[ImGuiCol_PopupBg] = ImVec4(0.05f, 0.05f, 0.05f, 0.94f);
 
-    // Standard buttons (for SELECT CAR, SETTINGS, EXIT)
     style.Colors[ImGuiCol_Button] = primaryBgColor;
     style.Colors[ImGuiCol_ButtonHovered] = hoverColor;
     style.Colors[ImGuiCol_ButtonActive] = activeColor;
 
-    style.Colors[ImGuiCol_Text] = ImVec4(0.8f, 0.8f, 0.8f, 1.0f); // Lighter text color
-    style.Colors[ImGuiCol_Header] = primaryBgColor; // Used for Selectable/ListBox
+    style.Colors[ImGuiCol_Text] = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
+    style.Colors[ImGuiCol_Header] = primaryBgColor;
     style.Colors[ImGuiCol_HeaderHovered] = hoverColor;
     style.Colors[ImGuiCol_HeaderActive] = activeColor;
-    // -------------------------------------
 
-
-    // --- Game Objects ---
     Shader carTrackShader("shaders/phong.vert", "shaders/phong.frag");
 
-    // --- Post-Processing Setup ---
     Shader postProcessShader("shaders/postprocess.vert", "shaders/postprocess.frag");
     postProcessShader.use();
     postProcessShader.setInt("screenTexture", 0);
 
     setupPostProcessingQuad();
     setupFramebuffer();
-    // ---------------
 
-    //car = new Car(glm::vec3(0.0f, 0.5f, 0.0f));
     car = new Camaro(glm::vec3(0.0f, 0.5f, 0.0f));
     car->loadModel();
     camera = new Camera(glm::vec3(0.0f, 3.0f, 5.0f));
     track = new Track();
 
-    // --- Game Loop ---
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = glfwGetTime();
         float deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        // --- GAME LOGIC UPDATE ---
         if (currentState == SPLASH_SCREEN) {
             splashTimer += deltaTime;
             if (splashTimer > 2.5f) currentState = MAIN_MENU;
@@ -625,44 +546,24 @@ int main() {
             car->Update(deltaTime);
         }
 
-        ///if (camera && car) {
-           /// if (currentState == RACING) {
-               /// camera->FollowCar(car->Position, car->FrontVector);
-           /// }
-           /// else {
-                // Background camera logic for the menu
-               /// camera->Position = glm::vec3(0.0f, 2.5f, 5.0f);
-                // camera->LookAt(glm::vec3(0.0f, 0.5f, 0.0f), backgroundYaw); 
-            ///}
-       /// }
-
-
         if (camera && car) {
             if (currentState == RACING) {
                 if (cockpitView) {
-                    // 🎯 Widok z kokpitu
-                    glm::vec3 cockpitOffset(0.0f, 0.7f, 0.2f); // pozycja kamery wewnątrz auta
+                    glm::vec3 cockpitOffset(0.0f, 0.7f, 0.2f);
                     camera->Position = car->Position
                         + car->FrontVector * cockpitOffset.z
                         + glm::vec3(0.0f, cockpitOffset.y, 0.0f);
                     camera->Front = glm::normalize(car->FrontVector);
                 }
                 else {
-                    // 🚗 Widok zza samochodu
                     camera->FollowCar(car->Position, car->FrontVector);
                 }
             }
             else {
-                // Kamera menu
                 camera->Position = glm::vec3(0.0f, 2.5f, 5.0f);
-                // camera->LookAt(glm::vec3(0.0f, 0.5f, 0.0f), backgroundYaw);
             }
         }
 
-
-        // --------------------------------------------------
-        // 1. RENDER 3D SCENE TO FRAMEBUFFER (Off-screen)
-        // --------------------------------------------------
         glBindFramebuffer(GL_FRAMEBUFFER, FBO_Scene);
         glEnable(GL_DEPTH_TEST);
 
@@ -684,29 +585,22 @@ int main() {
         if (camera)
             carTrackShader.setVec3("viewPos", camera->Position);
 
-        // Draw track
         if (track) {
             carTrackShader.setVec3("objectColor", glm::vec3(0.2f, 0.4f, 0.2f));
             track->Draw(carTrackShader);
         }
 
-        // Draw car
         if (car) {
             carTrackShader.setVec3("objectColor", carCustomColor);
 
             if (currentState == MAIN_MENU && showCarSelect) {
-                // Draw rotating car model for preview
                 car->Draw(carTrackShader, menuCarPosition, carMenuRotation);
             }
             else if (currentState == RACING) {
-                // Draw car for active race
                 car->Draw(carTrackShader);
             }
         }
 
-        // --------------------------------------------------
-        // 2. RENDER TO MAIN SCREEN AND APPLY POST-PROCESSING
-        // --------------------------------------------------
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDisable(GL_DEPTH_TEST);
 
@@ -723,8 +617,6 @@ int main() {
         glBindTexture(GL_TEXTURE_2D, textureColorBuffer);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-
-        // --- ImGui UI ---
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -748,7 +640,6 @@ int main() {
         glfwPollEvents();
     }
 
-    // --- Cleanup ---
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
