@@ -4,6 +4,9 @@
 #include <cmath>
 #include <algorithm>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h" // Zakładam, że masz ten plik w projekcie
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -18,13 +21,17 @@
 #include "backends/imgui_impl_opengl3.h"
 #include "imgui_internal.h"
 
-const unsigned int SCR_WIDTH = 1280;
-const unsigned int SCR_HEIGHT = 720;
+// Zmienne globalne do przechowywania AKTUALNEJ rozdzielczości
+int current_width = 1280;
+int current_height = 720;
 
 unsigned int FBO_Scene;
 unsigned int textureColorBuffer;
 unsigned int RBO_DepthStencil;
 unsigned int quadVAO, quadVBO;
+
+// NOWA ZMIENNA GLOBALNA dla tekstury splash screena
+unsigned int splashTextureID = 0;
 
 enum GameState {
     SPLASH_SCREEN,
@@ -54,8 +61,61 @@ float carMenuRotation = 0.0f;
 glm::vec3 menuCarPosition = glm::vec3(0.0f, 0.5f, 0.0f);
 float backgroundYaw = 0.0f;
 
+// Deklaracja funkcji, która teraz przyjmuje dynamiczne wymiary
+void setupFramebuffer(int width, int height);
+
+// NOWA FUNKCJA DO ŁADOWANIA TEKSTUR
+unsigned int loadTexture(const char* path) {
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+
+    int width, height, nrComponents;
+    unsigned char* data = stbi_load(path, &width, &height, &nrComponents, 0);
+    if (data) {
+        GLenum format;
+        if (nrComponents == 1)
+            format = GL_RED;
+        else if (nrComponents == 3)
+            format = GL_RGB;
+        else if (nrComponents == 4)
+            format = GL_RGBA;
+        else {
+            std::cout << "ERROR::TEXTURE::Unsupported number of color components: " << nrComponents << std::endl;
+            stbi_image_free(data);
+            return 0;
+        }
+
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        stbi_image_free(data);
+    }
+    else {
+        std::cout << "Texture failed to load at path: " << path << std::endl;
+        stbi_image_free(data);
+        return 0;
+    }
+
+    return textureID;
+}
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
+
+    // AKTUALIZACJA GLOBALNYCH ZMIENNYCH
+    current_width = width;
+    current_height = height;
+
+    // Ponowne skonfigurowanie FBO, aby pasowało do nowej rozdzielczości
+    if (FBO_Scene != 0) {
+        setupFramebuffer(width, height);
+    }
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -141,20 +201,30 @@ void setupPostProcessingQuad() {
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 }
 
-void setupFramebuffer() {
+// Funkcja teraz przyjmuje wymiary okna
+void setupFramebuffer(int width, int height) {
+    // Jeśli FBO już istnieje, usuwamy jego składowe, aby móc utworzyć nowe o innych wymiarach
+    if (FBO_Scene != 0) {
+        glDeleteFramebuffers(1, &FBO_Scene);
+        glDeleteTextures(1, &textureColorBuffer);
+        glDeleteRenderbuffers(1, &RBO_DepthStencil);
+    }
+
     glGenFramebuffers(1, &FBO_Scene);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO_Scene);
 
     glGenTextures(1, &textureColorBuffer);
     glBindTexture(GL_TEXTURE_2D, textureColorBuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+    // Używamy nowych wymiarów
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorBuffer, 0);
 
     glGenRenderbuffers(1, &RBO_DepthStencil);
     glBindRenderbuffer(GL_RENDERBUFFER, RBO_DepthStencil);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT);
+    // Używamy nowych wymiarów
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO_DepthStencil);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -163,38 +233,55 @@ void setupFramebuffer() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+// ZMODYFIKOWANA FUNKCJA SPLASH SCREEN
 void RenderSplashScreen() {
+    // Używamy dynamicznych wymiarów
     ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImVec2(SCR_WIDTH, SCR_HEIGHT));
+    ImGui::SetNextWindowSize(ImVec2(current_width, current_height));
     ImGui::Begin("Splash Screen", nullptr,
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
         ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoBackground);
 
-    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(0, 0), ImVec2(SCR_WIDTH, SCR_HEIGHT),
-        IM_COL32(20, 20, 20, 255));
+    // Rysowanie tekstury tła, jeśli została załadowana
+    if (splashTextureID != 0) {
+        ImGui::GetWindowDrawList()->AddImage(
+            (void*)(intptr_t)splashTextureID,
+            ImVec2(0, 0),
+            ImVec2(current_width, current_height)
+        );
+    }
+    else {
+        // Fallback: Rysowanie jednolitego tła
+        ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(0, 0), ImVec2(current_width, current_height),
+            IM_COL32(20, 20, 20, 255));
 
-    ImGui::SetCursorPosX((SCR_WIDTH - ImGui::CalcTextSize("RACING 3D").x * 2.0f) * 0.5f);
-    ImGui::SetCursorPosY(SCR_HEIGHT * 0.4f);
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.5f, 0.2f, 1.0f));
-    ImGui::SetWindowFontScale(2.0f);
-    ImGui::Text("RACING 3D");
-    ImGui::PopStyleColor();
-    ImGui::SetWindowFontScale(1.0f);
+        // Pozycjonowanie tytułu
+        ImGui::SetCursorPosX((current_width - ImGui::CalcTextSize("RACING 3D").x * 2.0f) * 0.5f);
+        ImGui::SetCursorPosY(current_height * 0.4f);
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.5f, 0.2f, 1.0f));
+        ImGui::SetWindowFontScale(2.0f);
+        ImGui::Text("RACING 3D");
+        ImGui::PopStyleColor();
+        ImGui::SetWindowFontScale(1.0f);
+    }
 
-    ImGui::SetCursorPosX((SCR_WIDTH - ImGui::CalcTextSize("Loading...").x) * 0.5f);
-    ImGui::SetCursorPosY(SCR_HEIGHT * 0.6f);
+    // Dodanie tekstu "Loading..." na dole (opcjonalnie)
+    ImGui::SetCursorPosX((current_width - ImGui::CalcTextSize("Loading...").x) * 0.5f);
+    ImGui::SetCursorPosY(current_height * 0.9f); // Przesunięte niżej
     ImGui::Text("Loading...");
 
     ImGui::End();
 }
 
 void RenderCarSelectMenu() {
-    ImGui::SetNextWindowPos(ImVec2(SCR_WIDTH * 0.5f, SCR_HEIGHT * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    // Wyśrodkowanie na podstawie dynamicznych wymiarów
+    ImGui::SetNextWindowPos(ImVec2(current_width * 0.5f, current_height * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
     ImGui::SetNextWindowSize(ImVec2(500, 450));
     ImGui::Begin("Car Select Menu", &showCarSelect,
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
 
+    // Aby zachować styl sub-menu, użyjemy jawnego koloru tła i górnej belki
     ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetWindowPos(),
         ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y + ImGui::GetWindowSize().y),
         IM_COL32(0, 0, 0, 220));
@@ -248,21 +335,17 @@ void RenderCarSelectMenu() {
     ImGui::Spacing();
     ImGui::Separator();
 
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.15f, 0.18f, 0.9f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.5f, 1.0f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.05f, 0.45f, 0.9f, 1.0f));
-
+    // Używamy stylu przycisku z głównego menu (został on globalnie ustawiony w main())
     if (ImGui::Button("BACK", ImVec2(200, 35))) {
         showCarSelect = false;
     }
-
-    ImGui::PopStyleColor(3);
 
     ImGui::End();
 }
 
 void RenderTrackSelectMenu() {
-    ImGui::SetNextWindowPos(ImVec2(SCR_WIDTH * 0.5f, SCR_HEIGHT * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    // Wyśrodkowanie na podstawie dynamicznych wymiarów
+    ImGui::SetNextWindowPos(ImVec2(current_width * 0.5f, current_height * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
     ImGui::SetNextWindowSize(ImVec2(500, 350));
     ImGui::Begin("Track Select Menu", &showTrackSelect,
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
@@ -302,21 +385,17 @@ void RenderTrackSelectMenu() {
     ImGui::Spacing();
     ImGui::Separator();
 
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.15f, 0.18f, 0.9f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.5f, 1.0f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.05f, 0.45f, 0.9f, 1.0f));
-
+    // Używamy stylu przycisku z głównego menu (został on globalnie ustawiony w main())
     if (ImGui::Button("BACK", ImVec2(200, 35))) {
         showTrackSelect = false;
     }
-
-    ImGui::PopStyleColor(3);
 
     ImGui::End();
 }
 
 void RenderSettingsMenu() {
-    ImGui::SetNextWindowPos(ImVec2(SCR_WIDTH * 0.5f, SCR_HEIGHT * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    // Wyśrodkowanie na podstawie dynamicznych wymiarów
+    ImGui::SetNextWindowPos(ImVec2(current_width * 0.5f, current_height * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
     ImGui::SetNextWindowSize(ImVec2(400, 300));
     ImGui::Begin("Settings Menu", &showSettings,
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
@@ -345,28 +424,38 @@ void RenderSettingsMenu() {
     ImGui::Separator();
     ImGui::Spacing();
 
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.15f, 0.18f, 0.9f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.5f, 1.0f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.05f, 0.45f, 0.9f, 1.0f));
-
+    // Używamy stylu przycisku z głównego menu (został on globalnie ustawiony w main())
     if (ImGui::Button("BACK", ImVec2(180, 35))) {
         showSettings = false;
     }
-
-    ImGui::PopStyleColor(3);
 
     ImGui::End();
 }
 
 void RenderMainMenu() {
+    // 1. Fullscreen Background
+    // Używamy dynamicznych wymiarów
     ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImVec2(SCR_WIDTH, SCR_HEIGHT));
+    ImGui::SetNextWindowSize(ImVec2(current_width, current_height));
     ImGui::Begin("Fullscreen Background", nullptr,
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus |
         ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
 
-    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(0, 0), ImVec2(SCR_WIDTH, SCR_HEIGHT), IM_COL32(0, 0, 0, 180));
+    // Rysowanie tła
+    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(0, 0), ImVec2(current_width, current_height), IM_COL32(0, 0, 0, 180));
+
+    // Rysowanie Tekstury Tła dla Menu Głównego (zamiast czarnego prostokąta)
+    if (splashTextureID != 0) {
+        ImGui::GetWindowDrawList()->AddImage(
+            (void*)(intptr_t)splashTextureID,
+            ImVec2(0, 0),
+            ImVec2(current_width, current_height),
+            ImVec2(0, 0),
+            ImVec2(1, 1),
+            IM_COL32(255, 255, 255, 100) // Trochę przezroczystości, żeby było ciemniejsze i widać było elementy 3D
+        );
+    }
 
     if (showSettings || showCarSelect || showTrackSelect) {
         ImGui::End();
@@ -376,29 +465,35 @@ void RenderMainMenu() {
         return;
     }
 
+    // 2. Title Panel
+    // Używamy dynamicznych wymiarów
     ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImVec2(SCR_WIDTH, SCR_HEIGHT * 0.2f));
+    ImGui::SetNextWindowSize(ImVec2(current_width, current_height * 0.2f));
     ImGui::Begin("Title Panel", nullptr,
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus);
 
-    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(0, 0), ImVec2(SCR_WIDTH, SCR_HEIGHT * 0.2f), IM_COL32(0, 0, 0, 150));
+    // Rysowanie tła panelu tytułowego
+    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(0, 0), ImVec2(current_width, current_height * 0.2f), IM_COL32(0, 0, 0, 150));
 
     float titleSize = 4.0f;
     ImGui::SetWindowFontScale(titleSize);
 
+    // Pozycjonowanie tytułu - wyśrodkowanie horyzontalne
     float titleWidth = ImGui::CalcTextSize("RACING 3D").x;
-    ImGui::SetCursorPosX((SCR_WIDTH - titleWidth) * 0.5f);
+    ImGui::SetCursorPosX((current_width - titleWidth) * 0.5f);
 
-    ImGui::SetCursorPosY((SCR_HEIGHT * 0.2f - ImGui::GetTextLineHeightWithSpacing() * titleSize) * 0.5f);
+    // Pozycjonowanie tytułu - wyśrodkowanie wertykalne
+    ImGui::SetCursorPosY((current_height * 0.2f - ImGui::GetTextLineHeightWithSpacing() * titleSize) * 0.5f);
 
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.1f, 0.5f, 1.0f, 1.0f));
     ImGui::Text("RACING 3D");
     ImGui::PopStyleColor();
 
+    // Linia pod tytułem
     ImGui::GetWindowDrawList()->AddLine(
-        ImVec2(SCR_WIDTH * 0.5f - 150.0f, ImGui::GetCursorScreenPos().y - 10.0f),
-        ImVec2(SCR_WIDTH * 0.5f + 150.0f, ImGui::GetCursorScreenPos().y - 10.0f),
+        ImVec2(current_width * 0.5f - 150.0f, ImGui::GetCursorScreenPos().y - 10.0f),
+        ImVec2(current_width * 0.5f + 150.0f, ImGui::GetCursorScreenPos().y - 10.0f),
         IM_COL32(25, 127, 255, 255), 2.0f
     );
 
@@ -406,10 +501,13 @@ void RenderMainMenu() {
 
     ImGui::End();
 
+    // 3. Main Menu Buttons
     float buttonsPanelHeight = 400.0f;
-    float startY = SCR_HEIGHT * 0.2f + (SCR_HEIGHT * 0.8f - buttonsPanelHeight) * 0.5f;
+    // Wyśrodkowanie przycisków pod tytułem, w pozostałej części ekranu
+    float startY = current_height * 0.2f + (current_height * 0.8f - buttonsPanelHeight) * 0.5f;
 
-    ImGui::SetNextWindowPos(ImVec2(SCR_WIDTH * 0.5f, startY), ImGuiCond_Always, ImVec2(0.5f, 0.0f));
+    // Pozycjonowanie na podstawie dynamicznej szerokości
+    ImGui::SetNextWindowPos(ImVec2(current_width * 0.5f, startY), ImGuiCond_Always, ImVec2(0.5f, 0.0f));
     ImGui::SetNextWindowSize(ImVec2(400, buttonsPanelHeight));
     ImGui::Begin("Main Menu Buttons", nullptr,
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
@@ -418,11 +516,19 @@ void RenderMainMenu() {
     ImVec2 buttonSize(350, 60);
     float buttonX = (ImGui::GetWindowSize().x - buttonSize.x) * 0.5f;
 
+    // Ustawienie czcionki dla przycisków, aby były większe
+    ImGui::SetWindowFontScale(1.5f);
+
+    // PRZYCISK START RACE (Akcent kolorystyczny: Pomarańczowy)
     ImGui::SetCursorPosX(buttonX);
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.25f, 0.1f, 1.0f)); // Ciemniejszy pomarańcz
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.5f, 0.2f, 1.0f)); // Akcent pomarańczowy
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.8f, 0.4f, 0.15f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 0.5f, 0.2f, 1.0f)); // Ramka pomarańczowa
+
+    // Musimy użyć flagi ImGuiButtonFlags_PressedOnDragDrop (lub innej) dla cienia, 
+    // aby wymusić ponowne przerysowanie Border, ale tu po prostu ręcznie ustawiamy kolory dla tekstu
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.5f, 1.0f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.2f, 0.6f, 1.0f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.05f, 0.45f, 0.9f, 1.0f));
 
     if (ImGui::Button("START RACE", buttonSize)) {
         currentState = RACING;
@@ -434,10 +540,13 @@ void RenderMainMenu() {
         }
     }
 
-    ImGui::PopStyleColor(4);
+    ImGui::PopStyleColor(5); // Zdejmujemy 5 stylów
 
     ImGui::Spacing();
     ImGui::Spacing();
+
+    // PRZYCISKI STANDARDOWE (Akcent kolorystyczny: Niebieski)
+    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.1f, 0.5f, 1.0f, 1.0f)); // Ramka niebieska
 
     ImGui::SetCursorPosX(buttonX);
     if (ImGui::Button("SELECT CAR", buttonSize)) showCarSelect = true;
@@ -448,23 +557,46 @@ void RenderMainMenu() {
     ImGui::SetCursorPosX(buttonX);
     if (ImGui::Button("SETTINGS", buttonSize)) showSettings = true;
 
+    ImGui::PopStyleColor(1); // Zdejmujemy ramkę niebieską
+
+    // PRZYCISK EXIT GAME (Akcent kolorystyczny: Czerwony)
     ImGui::SetCursorPosX(buttonX);
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.1f, 0.1f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.6f, 0.2f, 0.2f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.4f, 0.15f, 0.15f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 0.2f, 0.2f, 1.0f)); // Ramka czerwona
+
     if (ImGui::Button("EXIT GAME", buttonSize)) {
         GLFWwindow* window = glfwGetCurrentContext();
         glfwSetWindowShouldClose(window, true);
     }
+
+    ImGui::PopStyleColor(4);
+
+    ImGui::SetWindowFontScale(1.0f); // Wracamy do normalnej czcionki
 
     ImGui::End();
     ImGui::End();
 }
 
 int main() {
+    // **********************************************
+    // UWAGA: stbi_set_flip_vertically_on_load(true);
+    //
+    // Jeśli ładowane obrazy (w tym Tło.png) wydają się odwrócone w pionie,
+    // odkomentuj poniższą linię (najlepiej w sekcji konfiguracji przed wywołaniem loadTexture).
+    // W Twoim projekcie może być to konieczne.
+    // stbi_set_flip_vertically_on_load(true);
+    // **********************************************
+
+
     if (!glfwInit()) return -1;
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Racing3D", nullptr, nullptr);
+    // Używamy zmiennych dynamicznych jako początkowych wymiarów
+    GLFWwindow* window = glfwCreateWindow(current_width, current_height, "Racing3D", nullptr, nullptr);
     if (!window) {
         glfwTerminate();
         return -1;
@@ -483,33 +615,60 @@ int main() {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-    ImGui::StyleColorsDark();
+    // ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();
 
-    style.FrameRounding = 0.0f;
-    style.GrabRounding = 0.0f;
+    // **********************************************
+    // MODYFIKACJA STYLU DLA NOWYCH PRZYCISKÓW
+    // **********************************************
+    style.FrameRounding = 12.0f; // ZAOKRĄGLENIE!
+    style.FrameBorderSize = 2.0f; // Ramka wokół przycisku
     style.WindowRounding = 0.0f;
     style.ChildRounding = 0.0f;
+    style.GrabRounding = 0.0f;
     style.ScrollbarRounding = 0.0f;
     style.WindowPadding = ImVec2(0, 0);
     style.ItemSpacing = ImVec2(8, 10);
+    style.ItemInnerSpacing = ImVec2(6, 6);
+    style.FramePadding = ImVec2(10, 10);
+    style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
 
-    ImVec4 primaryBgColor = ImVec4(0.1f, 0.15f, 0.18f, 0.9f);
-    ImVec4 hoverColor = ImVec4(0.1f, 0.5f, 1.0f, 1.0f);
-    ImVec4 activeColor = ImVec4(0.05f, 0.45f, 0.9f, 1.0f);
+    // Główna paleta kolorów
+    ImVec4 primaryBgColor = ImVec4(0.05f, 0.05f, 0.05f, 0.9f); // Bardzo ciemne tło (przyciski)
+    ImVec4 hoverColor = ImVec4(0.1f, 0.5f, 1.0f, 1.0f); // Standardowy niebieski (hover)
+    ImVec4 activeColor = ImVec4(0.05f, 0.45f, 0.9f, 1.0f); // Standardowy niebieski (active)
+    ImVec4 borderColor = ImVec4(0.1f, 0.5f, 1.0f, 1.0f); // Ramka - domyślnie niebieska
 
+    // Ustawienia dla okien (pop-upów, sub-menu)
     style.Colors[ImGuiCol_WindowBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
-    style.Colors[ImGuiCol_FrameBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
-    style.Colors[ImGuiCol_PopupBg] = ImVec4(0.05f, 0.05f, 0.05f, 0.94f);
+    style.Colors[ImGuiCol_PopupBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.94f); // Ciemne dla submenu
 
+    // Ustawienia dla kontrolek i przycisków
+    style.Colors[ImGuiCol_FrameBg] = primaryBgColor;
+    style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.07f, 0.07f, 0.07f, 0.9f);
+    style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.05f, 0.05f, 0.05f, 0.9f);
+
+    // Główny styl przycisków (dla SELECT CAR/TRACK/SETTINGS)
     style.Colors[ImGuiCol_Button] = primaryBgColor;
-    style.Colors[ImGuiCol_ButtonHovered] = hoverColor;
-    style.Colors[ImGuiCol_ButtonActive] = activeColor;
+    style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.1f, 0.5f, 1.0f, 1.0f); // Niebieski hover
+    style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.05f, 0.45f, 0.9f, 1.0f); // Ciemniejszy niebieski active
 
-    style.Colors[ImGuiCol_Text] = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
+    style.Colors[ImGuiCol_Border] = borderColor; // Domyslna ramka (niebieski)
+
+    // Nagłówki (listy, selekty)
     style.Colors[ImGuiCol_Header] = primaryBgColor;
     style.Colors[ImGuiCol_HeaderHovered] = hoverColor;
     style.Colors[ImGuiCol_HeaderActive] = activeColor;
+
+    // Tekst i Selektory (dla submenu)
+    style.Colors[ImGuiCol_Text] = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
+    style.Colors[ImGuiCol_Separator] = ImVec4(0.1f, 0.5f, 1.0f, 1.0f);
+    style.Colors[ImGuiCol_CheckMark] = ImVec4(0.1f, 0.5f, 1.0f, 1.0f);
+    style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.1f, 0.5f, 1.0f, 1.0f);
+    style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.05f, 0.45f, 0.9f, 1.0f);
+    // **********************************************
+    // KONIEC MODYFIKACJI STYLU
+    // **********************************************
 
     Shader carTrackShader("shaders/phong.vert", "shaders/phong.frag");
 
@@ -518,7 +677,14 @@ int main() {
     postProcessShader.setInt("screenTexture", 0);
 
     setupPostProcessingQuad();
-    setupFramebuffer();
+    // Używamy zmiennych dynamicznych do pierwszej konfiguracji FBO
+    setupFramebuffer(current_width, current_height);
+
+    // *************************************************************
+    // ŁADOWANIE NOWEJ TEKSTURY TŁA
+    // *************************************************************
+    stbi_set_flip_vertically_on_load(false); // Może być wymagane lub nie, w zależności od twojego pliku Tło.png
+    splashTextureID = loadTexture("assets/Tło.png");
 
     car = new Camaro(glm::vec3(0.0f, 0.5f, 0.0f));
     car->loadModel();
@@ -567,14 +733,18 @@ int main() {
         glBindFramebuffer(GL_FRAMEBUFFER, FBO_Scene);
         glEnable(GL_DEPTH_TEST);
 
+        // Zawsze używamy pełnego, aktualnego viewportu
+        glViewport(0, 0, current_width, current_height);
+
         glm::vec3 skyColor = glm::mix(glm::vec3(0.05f, 0.05f, 0.15f), glm::vec3(0.2f, 0.3f, 0.3f), timeOfDay);
         glClearColor(skyColor.r, skyColor.g, skyColor.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         carTrackShader.use();
         if (camera) {
+            // Używamy dynamicznych wymiarów do obliczenia proporcji
             carTrackShader.setMat4("view", camera->GetViewMatrix());
-            carTrackShader.setMat4("projection", camera->GetProjectionMatrix((float)SCR_WIDTH / (float)SCR_HEIGHT));
+            carTrackShader.setMat4("projection", camera->GetProjectionMatrix((float)current_width / (float)current_height));
         }
         glm::vec3 lightPos(5.0f, 10.0f, 5.0f);
         carTrackShader.setVec3("lightPos", lightPos);
@@ -604,6 +774,9 @@ int main() {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDisable(GL_DEPTH_TEST);
 
+        // Używamy pełnego, aktualnego viewportu
+        glViewport(0, 0, current_width, current_height);
+
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -624,7 +797,8 @@ int main() {
         if (currentState == SPLASH_SCREEN) RenderSplashScreen();
         else if (currentState == MAIN_MENU) RenderMainMenu();
         else if (currentState == RACING && car) {
-            ImGui::SetNextWindowPos(ImVec2(10, SCR_HEIGHT - 60));
+            // Pozycjonowanie HUD na podstawie dynamicznej wysokości
+            ImGui::SetNextWindowPos(ImVec2(10, current_height - 60));
             ImGui::Begin("HUD", nullptr,
                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
             ImGui::Text("Speed: %.1f km/h", glm::length(car->Velocity) * 3.6f);
@@ -643,6 +817,9 @@ int main() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+
+    // Usunięcie tekstury tła
+    if (splashTextureID != 0) glDeleteTextures(1, &splashTextureID);
 
     glDeleteFramebuffers(1, &FBO_Scene);
     glDeleteVertexArrays(1, &quadVAO);
