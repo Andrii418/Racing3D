@@ -583,7 +583,7 @@ int main() {
     // **********************************************
     // UWAGA: stbi_set_flip_vertically_on_load(true);
     //
-    // Jeśli ładowane obrazy (w tym Tło.png) wydają się odwrócone w pionie,
+    // Jeśli ładowane obrazy (w tym Tlo.png) wydają się odwrócone w pionie,
     // odkomentuj poniższą linię (najlepiej w sekcji konfiguracji przed wywołaniem loadTexture).
     // W Twoim projekcie może być to konieczne.
     // stbi_set_flip_vertically_on_load(true);
@@ -683,8 +683,8 @@ int main() {
     // *************************************************************
     // ŁADOWANIE NOWEJ TEKSTURY TŁA
     // *************************************************************
-    stbi_set_flip_vertically_on_load(false); // Może być wymagane lub nie, w zależności od twojego pliku Tło.png
-    splashTextureID = loadTexture("assets/Tło.png");
+    stbi_set_flip_vertically_on_load(false); // Może być wymagane lub nie, w zależności od twojego pliku Tlo.png
+    splashTextureID = loadTexture("assets/Tlo.png"); // TUTAJ ZMIENIONO: Tło.png -> Tlo.png
 
     car = new Camaro(glm::vec3(0.0f, 0.5f, 0.0f));
     car->loadModel();
