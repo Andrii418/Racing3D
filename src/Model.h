@@ -1,28 +1,54 @@
 #pragma once
-#include <string>
-#include <vector>
+#include <glad/glad.h> 
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 #include "Shader.h"
 
-// Prosta struktura wierzcho³ka
+#include <string>
+#include <vector>
+
 struct Vertex {
     glm::vec3 Position;
     glm::vec3 Normal;
     glm::vec2 TexCoords;
 };
 
-class Model {
+struct Texture {
+    unsigned int id = 0; // Initialized
+    std::string type;
+    std::string path;
+};
+
+class Mesh {
 public:
-    Model(const std::string& path); // konstruktor wczytuj¹cy model
-    ~Model();
-    void Draw(Shader& shader);      // rysuje model
+    std::vector<Vertex>       vertices;
+    std::vector<unsigned int> indices;
+    std::vector<Texture>      textures;
+
+    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
+    void Draw(const Shader& shader);
 
 private:
-    std::vector<Vertex> vertices;
-    std::vector<unsigned int> indices;
-    // Inicjalizacja do 0, aby zapobiec problemom w destruktorze
-    unsigned int VAO = 0, VBO = 0, EBO = 0;
-
+    unsigned int VAO = 0, VBO = 0, EBO = 0; // Initialized
     void setupMesh();
-    void loadModel(const std::string& path);
+};
+
+class Model {
+public:
+    Model(const std::string& path);
+    void Draw(const Shader& shader);
+
+private:
+    std::vector<Mesh> meshes;
+    std::string directory;
+    std::vector<Texture> textures_loaded;
+
+    void loadModel(std::string path);
+    void processNode(aiNode* node, const aiScene* scene);
+    Mesh processMesh(aiMesh* mesh, const aiScene* scene);
+    std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName);
 };
