@@ -25,7 +25,7 @@ file(GLOB_RECURSE SRC_FILES_GAME "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 add_executable(${PROJECT_NAME}
     ${SRC_FILES_GAME}
     ${IMGUI_SOURCES}
-)
+ "src/city.h" "src/City.cpp" "src/Model.cpp" "src/Karting.h") 
 
 # -----------------------------------------------------------------
 # 2. INTEGRACJA IMGUI: ŒCIE¯KI NAG£ÓWKOWE I DEFINICJE KOMPILATORA
@@ -58,12 +58,14 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(glad CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(assimp CONFIG REQUIRED) 
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     glfw
     glad::glad
     glm::glm
     OpenGL::GL
+    assimp::assimp 
 )
 
 # Dodatkowe — opcjonalnie: kopiowanie shaderów (jeœli chcesz te¿ skopiowaæ do katalogu build)

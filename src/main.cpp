@@ -10,16 +10,25 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
+#include <windows.h>
 #include "Shader.h"
 #include "Camera.h"
 #include "Camaro.h"
 #include "Track.h"
+#include "City.h"
+#include "Karting.h"
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 #include "imgui_internal.h"
+
+
+
 
 // Zmienne globalne do przechowywania AKTUALNEJ rozdzielczości
 int current_width = 1280;
@@ -29,6 +38,8 @@ unsigned int FBO_Scene;
 unsigned int textureColorBuffer;
 unsigned int RBO_DepthStencil;
 unsigned int quadVAO, quadVBO;
+
+unsigned int grassTextureID = 0;
 
 // NOWA ZMIENNA GLOBALNA dla tekstury splash screena
 unsigned int splashTextureID = 0;
@@ -42,6 +53,9 @@ enum GameState {
 Camaro* car = nullptr;
 Camera* camera = nullptr;
 Track* track = nullptr;
+City* city = nullptr;
+Karting* karting = nullptr;
+
 bool keys[1024] = { false };
 float lastFrame = 0.0f;
 GameState currentState = SPLASH_SCREEN;
@@ -343,19 +357,72 @@ void RenderCarSelectMenu() {
     ImGui::End();
 }
 
+//void RenderTrackSelectMenu() {
+//    // Wyśrodkowanie na podstawie dynamicznych wymiarów
+//    ImGui::SetNextWindowPos(ImVec2(current_width * 0.5f, current_height * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+//    ImGui::SetNextWindowSize(ImVec2(500, 350));
+//    ImGui::Begin("Track Select Menu", &showTrackSelect,
+//        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
+//
+//    ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetWindowPos(),
+//        ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y + ImGui::GetWindowSize().y),
+//        IM_COL32(0, 0, 0, 220));
+//
+//    ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetWindowPos(),
+//        ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y + 10),
+//        IM_COL32(25, 127, 255, 255));
+//
+//    ImGui::Dummy(ImVec2(0, 10));
+//
+//    ImGui::TextColored(ImVec4(0.1f, 0.5f, 1.0f, 1.0f), "  [ TRACK SELECTION ]");
+//    ImGui::Separator();
+//    ImGui::Spacing();
+//
+//    const char* trackNames[] = { "Flat Grass Arena (Level 1)", "Desert Canyon (Level 2)" };
+//    ImGui::Text("Selected Track: %s", trackNames[selectedTrack]);
+//
+//    if (ImGui::BeginListBox("##TrackList", ImVec2(-FLT_MIN, 100)))
+//    {
+//        if (ImGui::Selectable(trackNames[0], selectedTrack == 0)) selectedTrack = 0;
+//        if (ImGui::Selectable(trackNames[1], selectedTrack == 1)) selectedTrack = 1;
+//        ImGui::EndListBox();
+//    }
+//
+//    ImGui::Spacing();
+//    ImGui::Text("Time of Day:");
+//    const char* timeNames[] = { "Night", "Dawn", "Day", "Dusk" };
+//    int currentTime = (int)(timeOfDay * 3.99f);
+//    if (ImGui::SliderInt("##TimeSlider", &currentTime, 0, 3, timeNames[currentTime])) {
+//        timeOfDay = (float)currentTime / 3.0f;
+//    }
+//
+//    ImGui::Spacing();
+//    ImGui::Separator();
+//
+//    // Używamy stylu przycisku z głównego menu (został on globalnie ustawiony w main())
+//    if (ImGui::Button("BACK", ImVec2(200, 35))) {
+//        showTrackSelect = false;
+//    }
+//
+//    ImGui::End();
+//}
 void RenderTrackSelectMenu() {
     // Wyśrodkowanie na podstawie dynamicznych wymiarów
     ImGui::SetNextWindowPos(ImVec2(current_width * 0.5f, current_height * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSize(ImVec2(500, 350));
+    ImGui::SetNextWindowSize(ImVec2(500, 400));
     ImGui::Begin("Track Select Menu", &showTrackSelect,
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
 
+    // Tło okna
     ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetWindowPos(),
-        ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y + ImGui::GetWindowSize().y),
+        ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x,
+            ImGui::GetWindowPos().y + ImGui::GetWindowSize().y),
         IM_COL32(0, 0, 0, 220));
 
+    // Pasek nagłówka
     ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetWindowPos(),
-        ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y + 10),
+        ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x,
+            ImGui::GetWindowPos().y + 10),
         IM_COL32(25, 127, 255, 255));
 
     ImGui::Dummy(ImVec2(0, 10));
@@ -364,13 +431,18 @@ void RenderTrackSelectMenu() {
     ImGui::Separator();
     ImGui::Spacing();
 
-    const char* trackNames[] = { "Flat Grass Arena (Level 1)", "Desert Canyon (Level 2)" };
+    // Lista torów
+    const char* trackNames[] = {
+        "Flat Grass Arena (Level 1)",
+        "Desert Canyon (Level 2)",
+        "Karting GP (Level 3)"
+    };
     ImGui::Text("Selected Track: %s", trackNames[selectedTrack]);
 
-    if (ImGui::BeginListBox("##TrackList", ImVec2(-FLT_MIN, 100)))
-    {
+    if (ImGui::BeginListBox("##TrackList", ImVec2(-FLT_MIN, 120))) {
         if (ImGui::Selectable(trackNames[0], selectedTrack == 0)) selectedTrack = 0;
         if (ImGui::Selectable(trackNames[1], selectedTrack == 1)) selectedTrack = 1;
+        if (ImGui::Selectable(trackNames[2], selectedTrack == 2)) selectedTrack = 2;
         ImGui::EndListBox();
     }
 
@@ -385,7 +457,7 @@ void RenderTrackSelectMenu() {
     ImGui::Spacing();
     ImGui::Separator();
 
-    // Używamy stylu przycisku z głównego menu (został on globalnie ustawiony w main())
+    // Przycisk powrotu
     if (ImGui::Button("BACK", ImVec2(200, 35))) {
         showTrackSelect = false;
     }
@@ -431,6 +503,10 @@ void RenderSettingsMenu() {
 
     ImGui::End();
 }
+
+// ------------------- City.h -------------------
+
+
 
 void RenderMainMenu() {
     // 1. Fullscreen Background
@@ -588,6 +664,7 @@ int main() {
     // W Twoim projekcie może być to konieczne.
     // stbi_set_flip_vertically_on_load(true);
     // **********************************************
+   
 
 
     if (!glfwInit()) return -1;
@@ -686,10 +763,21 @@ int main() {
     stbi_set_flip_vertically_on_load(false); // Może być wymagane lub nie, w zależności od twojego pliku Tlo.png
     splashTextureID = loadTexture("assets/Tlo.png"); // TUTAJ ZMIENIONO: Tło.png -> Tlo.png
 
-    car = new Camaro(glm::vec3(0.0f, 0.5f, 0.0f));
+
+
+    car = new Camaro(glm::vec3(0.0f, 0.1f, 0.0f));
     car->loadModel();
     camera = new Camera(glm::vec3(0.0f, 3.0f, 5.0f));
     track = new Track();
+    City* city = new City(glm::vec3(0.0f, 0.0f, 0.0f));
+    city->Scale = glm::vec3(0.3f); // zmniejszenie miasta
+    city->loadModel(); // użyje domyślnej ścieżki
+
+    karting = new Karting(glm::vec3(0.0f, 0.0f, 0.0f));
+    karting->Scale = glm::vec3(0.1f);   // dopasuj skalę
+    karting->Yaw = 0.0f;
+    karting->loadModel();               // ścieżka jest w Karting.h
+
 
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = glfwGetTime();
@@ -740,9 +828,62 @@ int main() {
         glClearColor(skyColor.r, skyColor.g, skyColor.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        //carTrackShader.use();
+        //if (camera) {
+        //    // Używamy dynamicznych wymiarów do obliczenia proporcji
+        //    carTrackShader.setMat4("view", camera->GetViewMatrix());
+        //    carTrackShader.setMat4("projection", camera->GetProjectionMatrix((float)current_width / (float)current_height));
+        //}
+        //glm::vec3 lightPos(5.0f, 10.0f, 5.0f);
+        //carTrackShader.setVec3("lightPos", lightPos);
+
+        //glm::vec3 lightColor = glm::mix(glm::vec3(0.1f), glm::vec3(1.0f), timeOfDay);
+        //carTrackShader.setVec3("lightColor", lightColor);
+
+        //if (camera)
+        //    carTrackShader.setVec3("viewPos", camera->Position);
+
+        //if (city) {
+
+        //    glm::mat4 model = glm::mat4(1.0f);
+        //    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // przesunięcie miasta nad płaszczyzną
+        //    carTrackShader.setVec3("objectColor", glm::vec3(0.6f, 0.6f, 0.6f));
+        //    carTrackShader.setMat4("model", model);
+
+        //    city->Draw(carTrackShader);
+        //}
+
+
+        //if (track) {
+        //    carTrackShader.setVec3("objectColor", glm::vec3(0.6f, 0.6f, 0.6f));
+        //    track->Draw(carTrackShader);
+
+        //    if (selectedTrack == 0 && track) {
+        //        track->Draw(carTrackShader);
+        //    }
+        //    else if (selectedTrack == 1 && city) {
+        //        city->Draw(carTrackShader);
+        //    }
+        //    else if (selectedTrack == 2 && karting) {
+        //        karting->Draw(carTrackShader);
+        //    }
+
+        //}
+
+
+        //if (car) {
+        //    carTrackShader.setVec3("objectColor", carCustomColor);
+
+        //    if (currentState == MAIN_MENU && showCarSelect) {
+        //        car->Draw(carTrackShader, menuCarPosition, carMenuRotation);
+        //    }
+        //    else if (currentState == RACING) {
+        //        car->Draw(carTrackShader);
+        //    }
+        //}
+
         carTrackShader.use();
         if (camera) {
-            // Używamy dynamicznych wymiarów do obliczenia proporcji
             carTrackShader.setMat4("view", camera->GetViewMatrix());
             carTrackShader.setMat4("projection", camera->GetProjectionMatrix((float)current_width / (float)current_height));
         }
@@ -755,11 +896,25 @@ int main() {
         if (camera)
             carTrackShader.setVec3("viewPos", camera->Position);
 
-        if (track) {
-            carTrackShader.setVec3("objectColor", glm::vec3(0.2f, 0.4f, 0.2f));
+        // ---------------- RYSOWANIE TORU ----------------
+        if (selectedTrack == 0 && track) {
+           /// carTrackShader.setVec3("objectColor", glm::vec3(0.6f, 0.6f, 0.6f));
             track->Draw(carTrackShader);
         }
+        else if (selectedTrack == 1 && city) {
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // przesunięcie miasta
+            ///carTrackShader.setVec3("objectColor", glm::vec3(0.6f, 0.6f, 0.6f));
+            carTrackShader.setMat4("model", model);
 
+            city->Draw(carTrackShader);
+        }
+        else if (selectedTrack == 2 && karting) {
+            ///carTrackShader.setVec3("objectColor", glm::vec3(0.6f, 0.6f, 0.6f));
+            karting->Draw(carTrackShader);
+        }
+
+        // ---------------- RYSOWANIE AUTA ----------------
         if (car) {
             carTrackShader.setVec3("objectColor", carCustomColor);
 
@@ -770,6 +925,7 @@ int main() {
                 car->Draw(carTrackShader);
             }
         }
+
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDisable(GL_DEPTH_TEST);
@@ -797,15 +953,30 @@ int main() {
         if (currentState == SPLASH_SCREEN) RenderSplashScreen();
         else if (currentState == MAIN_MENU) RenderMainMenu();
         else if (currentState == RACING && car) {
-            // Pozycjonowanie HUD na podstawie dynamicznej wysokości
+            // HUD z prędkością i widokiem
             ImGui::SetNextWindowPos(ImVec2(10, current_height - 60));
             ImGui::Begin("HUD", nullptr,
                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
             ImGui::Text("Speed: %.1f km/h", glm::length(car->Velocity) * 3.6f);
             ImGui::Text("View: %s", cockpitView ? "Cockpit" : "Chase");
+            ImGui::End();
+
+            // Dodatkowy panel z przyciskiem powrotu
+            ImGui::SetNextWindowPos(ImVec2(10, 10)); // lewy górny róg
+            ImGui::Begin("RaceMenu", nullptr,
+                ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+
+            if (ImGui::Button("BACK TO MAIN MENU", ImVec2(200, 40))) {
+                currentState = MAIN_MENU;
+                showSettings = false;
+                showCarSelect = false;
+                showTrackSelect = false;
+            }
 
             ImGui::End();
         }
+
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -828,6 +999,8 @@ int main() {
     delete car;
     delete camera;
     delete track;
+    delete city;
+
 
     glfwTerminate();
     return 0;
