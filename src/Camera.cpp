@@ -1,4 +1,4 @@
-﻿#include "Camera.h"
+#include "Camera.h"
 #include <iostream>
 
 #define GLM_ENABLE_EXPERIMENTAL

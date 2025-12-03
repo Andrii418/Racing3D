@@ -57,10 +57,6 @@ void Mesh::Draw(const Shader& shader)
         glBindTexture(GL_TEXTURE_2D, textures[i].id);
     }
 
-    if (textures.empty()) {
-        // Optional: fallback if no texture
-    }
-
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, (GLsizei)indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
@@ -82,7 +78,7 @@ void Model::Draw(const Shader& shader)
 void Model::loadModel(std::string path)
 {
     Assimp::Importer importer;
-    // Added check for failure
+    // Added check for failure, flipping UVs for OpenGL
     const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
     if (!scene || !scene->mRootNode || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE)
@@ -91,10 +87,9 @@ void Model::loadModel(std::string path)
         return;
     }
     directory = path.substr(0, path.find_last_of('/'));
-    // Windows path fix
+
+    // Windows path fix if needed
     if (directory.find('\\') != std::string::npos) {
-        // if path uses backslashes, adjust logic if needed, but Assimp usually handles forward slashes fine.
-        // Standardizing to forward slash for directory extraction is safer:
         directory = path.substr(0, path.find_last_of("\\/"));
     }
 
@@ -197,7 +192,6 @@ unsigned int TextureFromFile(const char* path, const std::string& directory)
     unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
     if (data)
     {
-        // FIX: Initialize format to avoid warning/errors
         GLenum format = GL_RGB;
         if (nrComponents == 1) format = GL_RED;
         else if (nrComponents == 3) format = GL_RGB;

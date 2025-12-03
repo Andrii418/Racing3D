@@ -25,7 +25,7 @@ file(GLOB_RECURSE SRC_FILES_GAME "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 add_executable(${PROJECT_NAME}
     ${SRC_FILES_GAME}
     ${IMGUI_SOURCES}
- "src/city.h" "src/City.cpp" "src/Model.cpp" "src/Karting.h") 
+ "src/city.h" "src/City.cpp" "src/Model.cpp" "src/Karting.h" "src/RaceCar.h" "src/RaceCar.cpp") 
 
 # -----------------------------------------------------------------
 # 2. INTEGRACJA IMGUI: ŒCIE¯KI NAG£ÓWKOWE I DEFINICJE KOMPILATORA

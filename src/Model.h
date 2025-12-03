@@ -18,7 +18,7 @@ struct Vertex {
 };
 
 struct Texture {
-    unsigned int id = 0; // Initialized
+    unsigned int id = 0;
     std::string type;
     std::string path;
 };
@@ -33,7 +33,7 @@ public:
     void Draw(const Shader& shader);
 
 private:
-    unsigned int VAO = 0, VBO = 0, EBO = 0; // Initialized
+    unsigned int VAO = 0, VBO = 0, EBO = 0;
     void setupMesh();
 };
 

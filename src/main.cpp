@@ -15,7 +15,7 @@
 
 #include "Shader.h"
 #include "Camera.h"
-#include "Camaro.h"
+#include "RaceCar.h"
 #include "Track.h"
 #include "City.h"
 // #include "Karting.h" // REMOVED: We use the new generic Model class instead
@@ -48,7 +48,7 @@ enum GameState {
     RACING
 };
 
-Camaro* car = nullptr;
+RaceCar* car = nullptr;
 Camera* camera = nullptr;
 Track* track = nullptr;
 City* city = nullptr;
@@ -565,8 +565,8 @@ int main() {
     stbi_set_flip_vertically_on_load(false);
     splashTextureID = loadTexture("assets/Tlo.png");
 
-    car = new Camaro(glm::vec3(0.0f, 0.1f, 0.0f));
-    car->loadModel();
+    car = new RaceCar(glm::vec3(0.0f, 0.1f, 0.0f));
+    car->loadAssets();
     camera = new Camera(glm::vec3(0.0f, 3.0f, 5.0f));
     track = new Track();
     city = new City(glm::vec3(0.0f, 0.0f, 0.0f));
