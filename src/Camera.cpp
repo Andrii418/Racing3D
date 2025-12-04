@@ -43,8 +43,8 @@ void Camera::LookAt(const glm::vec3& centerPoint, float yawRotation) {
 }
 
 void Camera::FollowCar(const glm::vec3& carPosition, const glm::vec3& carFrontVector) {
-    float distance = 4.0f;
-    float height = 2.0f;
+    float distance = 1.5f; 
+    float height = 0.8f;   
 
     glm::vec3 desiredPosition = carPosition - glm::normalize(carFrontVector) * distance;
     desiredPosition.y += height;
@@ -54,4 +54,8 @@ void Camera::FollowCar(const glm::vec3& carPosition, const glm::vec3& carFrontVe
 
     glm::vec3 lookAtTarget = carPosition + glm::vec3(0.0f, 0.5f, 0.0f);
     Front = glm::normalize(lookAtTarget - Position);
+
+    glm::vec3 Right = glm::normalize(glm::cross(Front, WorldUp));
+
+    Up = glm::normalize(glm::cross(Right, Front));
 }
