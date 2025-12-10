@@ -7,7 +7,6 @@
 
 class Shader;
 
-// Helper struct to keep Body and Wheels separate
 struct CarMesh {
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec3> normals;
@@ -21,24 +20,21 @@ struct CarMesh {
 class RaceCar {
 public:
     glm::vec3 Position;
+    glm::vec3 PreviousPosition;   // NOWE – do kolizji
     glm::vec3 Velocity;
     glm::vec3 FrontVector;
     float Yaw;
 
-    // Physics settings
     float MaxSpeed = 20.0f;
     float Acceleration = 15.0f;
     float Braking = 10.0f;
     float TurnRate = 2.0f;
-    float WheelRotation = 0.0f; // To spin wheels
+    float WheelRotation = 0.0f;
 
     RaceCar(glm::vec3 startPosition = glm::vec3(0.0f, 0.2f, 0.0f));
 
     bool loadAssets();
-
     void Update(float deltaTime);
-
-    // Zaktualizowana deklaracja Draw, aby pasowała do wywołań w main.cpp (Menu i Gra)
     void Draw(const Shader& shader, glm::vec3 pos = glm::vec3(0.0f), float yaw = 0.0f) const;
 
     glm::mat4 GetModelMatrix() const;
@@ -47,6 +43,8 @@ private:
     CarMesh bodyMesh;
     CarMesh wheelMesh;
     unsigned int textureID;
+
+    void HandleCollision();   // NOWA funkcja
 
     bool loadObj(const std::string& path, CarMesh& mesh);
     unsigned int loadTexture(const char* path);
