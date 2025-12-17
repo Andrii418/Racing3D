@@ -1,13 +1,10 @@
 #include "Model.h"
 #include <iostream>
 
-// CORRECTION: We do NOT define STB_IMAGE_IMPLEMENTATION here because it is already in main.cpp
-// We only include the header to use the functions.
 #include "stb_image.h"
 
 unsigned int TextureFromFile(const char* path, const std::string& directory);
 
-// --- MESH IMPLEMENTATION ---
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
 {
     this->vertices = vertices;
@@ -29,13 +26,10 @@ void Mesh::setupMesh()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
 
-    // vertex positions
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
-    // vertex normals
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
-    // vertex texture coords
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
 
@@ -63,7 +57,6 @@ void Mesh::Draw(const Shader& shader)
     glActiveTexture(GL_TEXTURE0);
 }
 
-// --- MODEL IMPLEMENTATION ---
 Model::Model(const std::string& path)
 {
     loadModel(path);
@@ -78,7 +71,6 @@ void Model::Draw(const Shader& shader)
 void Model::loadModel(std::string path)
 {
     Assimp::Importer importer;
-    // Added check for failure, flipping UVs for OpenGL
     const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
     if (!scene || !scene->mRootNode || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE)
@@ -88,7 +80,6 @@ void Model::loadModel(std::string path)
     }
     directory = path.substr(0, path.find_last_of('/'));
 
-    // Windows path fix if needed
     if (directory.find('\\') != std::string::npos) {
         directory = path.substr(0, path.find_last_of("\\/"));
     }

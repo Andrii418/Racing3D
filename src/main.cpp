@@ -4,7 +4,6 @@
 #include <cmath>
 #include <algorithm>
 
-// KEEP THIS HERE. Ensure it is NOT defined in Model.cpp to avoid linker errors.
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h" 
 
@@ -18,8 +17,7 @@
 #include "RaceCar.h"
 #include "Track.h"
 #include "City.h"
-// #include "Karting.h" // REMOVED: We use the new generic Model class instead
-#include "Model.h"      // ADDED: Uses the new Model.h/cpp you created
+#include "Model.h"      
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -30,7 +28,6 @@
 #include "backends/imgui_impl_opengl3.h"
 #include "imgui_internal.h"
 
-// Zmienne globalne do przechowywania AKTUALNEJ rozdzielczości
 int current_width = 1280;
 int current_height = 720;
 
@@ -53,7 +50,6 @@ Camera* camera = nullptr;
 Track* track = nullptr;
 City* city = nullptr;
 
-// NEW: Using the generic Model class for the complex map
 Model* kartingMap = nullptr;
 
 bool keys[1024] = { false };
@@ -75,10 +71,8 @@ float carMenuRotation = 0.0f;
 glm::vec3 menuCarPosition = glm::vec3(0.0f, 0.5f, 0.0f);
 float backgroundYaw = 0.0f;
 
-// Forward declarations
 void setupFramebuffer(int width, int height);
 
-// Custom texture loader for simple UI/splash textures
 unsigned int loadTexture(const char* path) {
     unsigned int textureID;
     glGenTextures(1, &textureID);
@@ -514,8 +508,6 @@ void RenderMainMenu() {
 }
 
 int main() {
-    // Check if flip is needed for your textures.
-    // stbi_set_flip_vertically_on_load(true);
 
     if (!glfwInit()) return -1;
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -551,8 +543,6 @@ int main() {
     style.Colors[ImGuiCol_Border] = ImVec4(0.1f, 0.5f, 1.0f, 1.0f);
     style.Colors[ImGuiCol_Text] = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
 
-    // IMPORTANT: This shader must match the "phong.vert" and "phong.frag" provided earlier
-    // which support textures!
     Shader carTrackShader("shaders/phong.vert", "shaders/phong.frag");
 
     Shader postProcessShader("shaders/postprocess.vert", "shaders/postprocess.frag");
@@ -573,10 +563,6 @@ int main() {
     city->Scale = glm::vec3(0.3f);
     city->loadModel();
 
-    // REPLACEMENT: Load the complex map using the new Model class
-    // WARNING: Verify this path points to the actual .obj file in your folder!
-    // Based on your file list, it's likely inside "assets/map/karting-club-lider..."
-    // If the file is named differently (e.g., "scene.gltf" or "map.obj"), CHANGE THIS LINE.
     kartingMap = new Model("assets/karting/gp.obj");
 
     while (!glfwWindowShouldClose(window)) {
@@ -639,7 +625,6 @@ int main() {
         if (camera)
             carTrackShader.setVec3("viewPos", camera->Position);
 
-        // ---------------- DRAW TRACKS ----------------
         if (selectedTrack == 0 && track) {
             track->Draw(carTrackShader);
         }
@@ -649,24 +634,17 @@ int main() {
             city->Draw(carTrackShader);
         }
         else if (selectedTrack == 2 && kartingMap) {
-            // Draw the complex textured map
+            
             glm::mat4 model = glm::mat4(1.0f);
-            // Replicate the scaling/positioning from your old Karting class if needed
             model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-            model = glm::scale(model, glm::vec3(0.1f)); // Scale down if the map is huge
+            model = glm::scale(model, glm::vec3(0.1f)); 
 
             carTrackShader.setMat4("model", model);
 
-            // The Model class automatically sets "texture_diffuse1" uniforms.
-            // Ensure your shaders/phong.frag uses texture(...) and NOT just objectColor!
             kartingMap->Draw(carTrackShader);
         }
 
-        // ---------------- DRAW CAR ----------------
         if (car) {
-            // Note: Your car class might still rely on manual objectColor.
-            // If the car looks black/wrong after shader update, check Camaro.cpp's Draw().
-            // For now, we set objectColor just in case the car shader needs it.
             carTrackShader.setVec3("objectColor", carCustomColor);
 
             if (currentState == MAIN_MENU && showCarSelect) {
@@ -736,7 +714,7 @@ int main() {
     delete camera;
     delete track;
     delete city;
-    delete kartingMap; // CLEANUP
+    delete kartingMap; 
 
     glfwTerminate();
     return 0;

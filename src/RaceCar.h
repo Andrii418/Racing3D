@@ -20,7 +20,7 @@ struct CarMesh {
 class RaceCar {
 public:
     glm::vec3 Position;
-    glm::vec3 PreviousPosition;   // NOWE – do kolizji
+    glm::vec3 PreviousPosition;   
     glm::vec3 Velocity;
     glm::vec3 FrontVector;
     float Yaw;
@@ -44,7 +44,7 @@ private:
     CarMesh wheelMesh;
     unsigned int textureID;
 
-    void HandleCollision();   // NOWA funkcja
+    void HandleCollision();   
 
     bool loadObj(const std::string& path, CarMesh& mesh);
     unsigned int loadTexture(const char* path);

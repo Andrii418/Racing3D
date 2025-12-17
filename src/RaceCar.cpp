@@ -6,7 +6,6 @@
 #include <iostream>
 #include <glm/gtc/matrix_transform.hpp>
 
-// ------------------ CarMesh::setupMesh ------------------
 
 void CarMesh::setupMesh() {
     if (vertices.empty()) return;
@@ -42,7 +41,6 @@ void CarMesh::setupMesh() {
     glBindVertexArray(0);
 }
 
-// ------------------ RaceCar Implementation ------------------
 
 RaceCar::RaceCar(glm::vec3 startPosition)
     : Position(startPosition),
@@ -70,10 +68,9 @@ bool RaceCar::loadAssets() {
     return true;
 }
 
-// ------------------ CRUCIAL: Update with collision ------------------
 
 void RaceCar::Update(float deltaTime) {
-    PreviousPosition = Position;   // Zapis poprzedniej pozycji
+    PreviousPosition = Position;   
 
     Position += Velocity * deltaTime;
 
@@ -81,7 +78,7 @@ void RaceCar::Update(float deltaTime) {
 
     Position.y = 0.0f;
 
-    HandleCollision();  // <---- DZIAŁAJĄCA KOLIZJA
+    HandleCollision();  
 
     float speed = glm::length(Velocity);
     if (speed > 0.1f) {
@@ -89,32 +86,25 @@ void RaceCar::Update(float deltaTime) {
     }
 }
 
-// ------------------ Anti-wall-pass Collision ------------------
 
 void RaceCar::HandleCollision() {
 
-    // promień wykrywania kolizji samochodu
     const float R = 1.0f;
 
-    // Jeśli mapa ma SWOJE ściany, dostosujesz to później,
-    // teraz mamy pewność że samochód fizycznie NIE PRZENIKNIE
 
     bool collided = false;
 
-    // Przykład granic żeby nie wyjeżdżał poza mapę 200x200
     if (Position.x > 100.0f) collided = true;
     if (Position.x < -100.0f) collided = true;
     if (Position.z > 100.0f) collided = true;
     if (Position.z < -100.0f) collided = true;
 
-    // Jeśli kolizja -> cofamy na poprzednią pozycję
     if (collided) {
         Position = PreviousPosition;
-        Velocity = glm::vec3(0.0f); // STOP — odbicie
+        Velocity = glm::vec3(0.0f); 
     }
 }
 
-// ------------------ Model Matrix ------------------
 
 glm::mat4 RaceCar::GetModelMatrix() const {
     glm::mat4 model = glm::mat4(1.0f);
@@ -124,7 +114,6 @@ glm::mat4 RaceCar::GetModelMatrix() const {
     return model;
 }
 
-// ------------------ Draw ------------------
 
 void RaceCar::Draw(const Shader& shader, glm::vec3 pos, float yaw) const {
 
@@ -171,7 +160,6 @@ void RaceCar::Draw(const Shader& shader, glm::vec3 pos, float yaw) const {
     glBindVertexArray(0);
 }
 
-// ------------------ OBJ Loader ------------------
 
 bool RaceCar::loadObj(const std::string& path, CarMesh& mesh) {
 

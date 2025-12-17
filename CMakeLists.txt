@@ -5,9 +5,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 message(STATUS "Konfiguracja projektu Racing3D...")
 
-# -----------------------------------------------------------------
-# 1. INTEGRACJA IMGUI: DEKLARACJA åCIEØEK I PLIK”W èR”D£OWYCH
-# -----------------------------------------------------------------
 set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui)
 
 set(IMGUI_SOURCES
@@ -19,7 +16,6 @@ set(IMGUI_SOURCES
     ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
 )
 
-# --- Pliki ürÛd≥owe GRY ---
 file(GLOB_RECURSE SRC_FILES_GAME "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
 add_executable(${PROJECT_NAME}
@@ -27,9 +23,6 @@ add_executable(${PROJECT_NAME}
     ${IMGUI_SOURCES}
  "src/city.h" "src/City.cpp" "src/Model.cpp" "src/Karting.h" "src/RaceCar.h" "src/RaceCar.cpp") 
 
-# -----------------------------------------------------------------
-# 2. INTEGRACJA IMGUI: åCIEØKI NAG£”WKOWE I DEFINICJE KOMPILATORA
-# -----------------------------------------------------------------
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${IMGUI_DIR}
     ${IMGUI_DIR}/backends
@@ -40,7 +33,6 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     IMGUI_IMPL_OPENGL_LOADER_GLAD
 )
 
-# Kopiowanie shaderÛw po zbudowaniu
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
@@ -53,7 +45,6 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     "$<TARGET_FILE_DIR:${PROJECT_NAME}>/assets"
 )
 
-# Biblioteki z vcpkg/systemu (zewnÍtrzne)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glad CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
@@ -68,7 +59,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     assimp::assimp 
 )
 
-# Dodatkowe ó opcjonalnie: kopiowanie shaderÛw (jeúli chcesz teø skopiowaÊ do katalogu build)
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
     message(STATUS "Kopiowanie shaderÛw do katalogu build...")
     file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/shaders" DESTINATION "${CMAKE_BINARY_DIR}")
