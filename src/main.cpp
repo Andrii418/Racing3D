@@ -155,8 +155,20 @@ void processCarInput(float deltaTime) {
 
     float currentSpeed = glm::length(car->Velocity);
 
-    if (keys[GLFW_KEY_W]) car->Velocity += car->FrontVector * car->Acceleration * deltaTime;
+    // If handbrake is held, ignore throttle input so it always brakes
+    bool handbrakePressed = keys[GLFW_KEY_SPACE];
+
+    if (keys[GLFW_KEY_W] && !handbrakePressed) car->Velocity += car->FrontVector * car->Acceleration * deltaTime;
     if (keys[GLFW_KEY_S]) car->Velocity -= car->FrontVector * car->Braking * deltaTime;
+
+    // handbrake input
+    car->Handbrake = handbrakePressed;
+
+    // steering input for physics (A = left +1, D = right -1)
+    float steeringIn = 0.0f;
+    if (keys[GLFW_KEY_A]) steeringIn = 1.0f;
+    if (keys[GLFW_KEY_D]) steeringIn = -1.0f;
+    car->SteeringInput = steeringIn;
 
     if (glm::length(car->Velocity) > car->MaxSpeed)
         car->Velocity = glm::normalize(car->Velocity) * car->MaxSpeed;
@@ -367,7 +379,7 @@ void RenderTrackSelectMenu() {
 
 void RenderSettingsMenu() {
     ImGui::SetNextWindowPos(ImVec2(current_width * 0.5f, current_height * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSize(ImVec2(400, 300));
+    ImGui::SetNextWindowSize(ImVec2(400, 360));
     ImGui::Begin("Settings Menu", &showSettings,
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
 
@@ -387,6 +399,21 @@ void RenderSettingsMenu() {
     ImGui::SliderFloat("Volume", &volume, 0.0f, 1.0f);
     static bool vsync = true;
     ImGui::Checkbox("V-Sync Enabled", &vsync);
+
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    ImGui::TextColored(ImVec4(0.9f,0.9f,0.6f,1.0f), "Physics Tuning");
+    if (car) {
+        ImGui::SliderFloat("Grip", &car->Grip, 0.0f, 1.5f);
+        ImGui::SliderFloat("Aerodynamic Drag", &car->AerodynamicDrag, 0.0f, 0.2f);
+        ImGui::SliderFloat("Rolling Resistance", &car->RollingResistance, 0.0f, 0.1f);
+        ImGui::SliderFloat("Steering Responsiveness", &car->SteeringResponsiveness, 0.0f, 10.0f);
+        ImGui::SliderFloat("Handbrake Grip Reduction", &car->HandbrakeGripReduction, 0.0f, 1.0f);
+        ImGui::SliderFloat("Max Speed (m/s)", &car->MaxSpeed, 5.0f, 80.0f);
+        ImGui::Checkbox("Handbrake (toggle)", &car->Handbrake);
+    }
 
     ImGui::Spacing();
     ImGui::Separator();

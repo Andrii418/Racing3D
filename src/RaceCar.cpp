@@ -72,17 +72,110 @@ bool RaceCar::loadAssets() {
 void RaceCar::Update(float deltaTime) {
     PreviousPosition = Position;   
 
+    // Compute forward vector from yaw to ensure consistency
+    FrontVector.x = sin(glm::radians(Yaw));
+    FrontVector.z = cos(glm::radians(Yaw));
+    FrontVector.y = 0.0f;
+    FrontVector = glm::normalize(FrontVector);
+
+    // Decompose velocity into forward and lateral components
+    glm::vec3 forward = FrontVector;
+    float speed = glm::length(Velocity);
+    glm::vec3 velLong = forward * glm::dot(Velocity, forward);
+    glm::vec3 velLat = Velocity - velLong;
+
+    // Effective grip starts as base Grip
+    float effectiveGrip = Grip;
+
+    // If handbrake is held: smoothly brake forward velocity and enable sliding
+    if (Handbrake) {
+        // use exponential multiplier for gentle deceleration
+        float forwardSpeed = glm::dot(Velocity, forward);
+        float newForwardSpeed = forwardSpeed * powf(HandbrakeDeceleration, deltaTime);
+        if (newForwardSpeed < 0.0f) newForwardSpeed = 0.0f;
+        velLong = forward * newForwardSpeed;
+
+        // reduce grip to allow sliding
+        effectiveGrip *= (1.0f - HandbrakeGripReduction);
+
+        // lateral slide based on steering input (user steers the slide direction)
+        float steer = glm::clamp(SteeringInput, -1.0f, 1.0f);
+        glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
+        float lateralAmount = 0.25f * (glm::clamp(forwardSpeed, 0.0f, MaxSpeed) / (MaxSpeed + 0.1f));
+        velLat += right * (-steer) * lateralAmount;
+
+        // prevent handbrake from increasing total speed: cap combined magnitude to previous speed, with small energy loss
+        glm::vec3 combined = velLong + velLat;
+        float combinedMag = glm::length(combined);
+        if (combinedMag > 0.001f) {
+            float prevSpeed = speed;
+            if (combinedMag > prevSpeed) {
+                combined *= (prevSpeed / combinedMag);
+                // apply small energy loss to simulate braking during drift
+                combined *= 0.99f;
+            }
+            // decompose back
+            velLong = forward * glm::dot(combined, forward);
+            velLat = combined - velLong;
+        }
+    }
+
+    // Recompose velocity before drag
+    Velocity = velLong + velLat;
+
+    // Aerodynamic drag (quadratic) applied to current velocity
+    speed = glm::length(Velocity);
+    if (speed > 0.001f) {
+        glm::vec3 drag = -glm::normalize(Velocity) * (AerodynamicDrag * speed * speed);
+        Velocity += drag * deltaTime;
+    }
+
+    // Rolling resistance (linear damping)
+    Velocity -= Velocity * RollingResistance * deltaTime;
+
+    // Recompute decomposition after drag/resistance
+    speed = glm::length(Velocity);
+    velLong = forward * glm::dot(Velocity, forward);
+    velLat = Velocity - velLong;
+
+    // Damp lateral velocity according to effective grip (less damping when handbrake reduces grip)
+    velLat *= (1.0f - glm::clamp(effectiveGrip * deltaTime, 0.0f, 0.95f));
+
+    // Recompose velocity
+    Velocity = velLong + velLat;
+
+    // Integrate position
     Position += Velocity * deltaTime;
 
+    // Align velocity toward forward slightly (simulates tire aligning) when not sliding wildly
+    speed = glm::length(Velocity);
+    if (speed > 0.5f && !Handbrake) {
+        float alignFactor = SteeringResponsiveness * deltaTime * glm::clamp(Grip * (1.0f - speed / (MaxSpeed + 0.001f)), 0.0f, 1.0f);
+        glm::vec3 velDir = (speed > 0.001f) ? glm::normalize(Velocity) : forward;
+        glm::vec3 newDir = glm::normalize(glm::mix(velDir, forward, alignFactor));
+
+        // Slight speed loss when changing direction
+        float dotp = glm::clamp(glm::dot(velDir, newDir), -1.0f, 1.0f);
+        float angle = acos(dotp);
+        float angleDeg = glm::degrees(angle);
+        float speedLoss = glm::min(0.05f, angleDeg / 180.0f * 0.2f);
+        float newSpeed = speed * (1.0f - speedLoss);
+
+        Velocity = newDir * newSpeed;
+    }
+
+    // Minor damping similar to original
     Velocity *= 0.98f;
 
+    // Keep grounded
     Position.y = 0.0f;
 
     HandleCollision();  
 
-    float speed = glm::length(Velocity);
-    if (speed > 0.1f) {
-        WheelRotation += speed * deltaTime * 10.0f;
+    float s = glm::length(Velocity);
+    if (s > 0.1f) {
+        float forwardSpeed = glm::dot(Velocity, forward);
+        WheelRotation += forwardSpeed * deltaTime * 10.0f;
     }
 }
 

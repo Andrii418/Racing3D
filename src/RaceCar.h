@@ -31,6 +31,20 @@ public:
     float TurnRate = 2.0f;
     float WheelRotation = 0.0f;
 
+    // Small physics tuning params
+    float Grip = 0.8f; // higher reduces lateral sliding
+    float AerodynamicDrag = 0.02f; // simple drag coefficient
+    float RollingResistance = 0.01f; // low speed resistance
+    float SteeringResponsiveness = 3.0f; // how quickly velocity aligns to car heading
+
+    // Handbrake / drift
+    bool Handbrake = false;
+    float HandbrakeGripReduction = 0.6f; // how much grip is reduced when handbrake held (0..1)
+    float HandbrakeDeceleration = 0.95f; // exponential deceleration multiplier per second when handbrake held
+
+    // Input state
+    float SteeringInput = 0.0f; // -1 right, +1 left
+
     RaceCar(glm::vec3 startPosition = glm::vec3(0.0f, 0.2f, 0.0f));
 
     bool loadAssets();
