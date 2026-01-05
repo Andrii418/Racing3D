@@ -500,10 +500,37 @@ void RenderMainMenu() {
     if (ImGui::Button("START RACE", buttonSize)) {
         currentState = RACING;
         if (car) {
-            car->Position = glm::vec3(0.0f, 0.5f, 0.0f);
+            glm::vec3 scaleFactor(0.1f); // taki sam jak model toru
+            glm::vec3 startLeft(-127.81f, 0.0f, 204.38f);
+            glm::vec3 startRight(-58.75f, 0.0f, 203.17f);
+
+            // punkt startowy na środku linii startu
+            glm::vec3 startPos = (startLeft + startRight) * 0.5f;
+
+            // kierunek wzdłuż toru
+            glm::vec3 dir = glm::normalize(startRight - startLeft);
+
+            // przesunięcie samochodu daleko w tył
+            float offsetBack = 95.0f;
+            startPos -= dir * offsetBack;
+
+            // kierunek prostopadły do toru (w prawo)
+            glm::vec3 rightVec = glm::normalize(glm::cross(dir, glm::vec3(0.0f, 1.0f, 0.0f)));
+
+            // przesunięcie w lewo, aby samochód nie wchodził w beton
+            float offsetSide = 5.0f; // zwiększ jeśli trzeba więcej
+            startPos -= rightVec * offsetSide;
+
+            // dopasowanie do skali toru
+            startPos *= scaleFactor;
+
+            // ustawienie samochodu
+            float startYaw = glm::degrees(atan2(dir.x, dir.z));
+            car->Position = startPos;
             car->Velocity = glm::vec3(0.0f);
-            car->Yaw = 0.0f;
-            car->FrontVector = glm::vec3(0.0f, 0.0f, 1.0f);
+            car->Yaw = startYaw;
+            car->FrontVector = glm::normalize(glm::vec3(sin(glm::radians(startYaw)), 0.0f, cos(glm::radians(startYaw))));
+
         }
     }
     ImGui::PopStyleColor(5);
