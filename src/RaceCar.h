@@ -20,22 +20,23 @@ struct CarMesh {
 class RaceCar {
 public:
     glm::vec3 Position;
-    glm::vec3 PreviousPosition;   
+    glm::vec3 PreviousPosition;
     glm::vec3 Velocity;
     glm::vec3 FrontVector;
     float Yaw;
 
-    float MaxSpeed = 20.0f;
-    float Acceleration = 15.0f;
-    float Braking = 10.0f;
+    float MaxSpeed = 85.0f;
+    float Acceleration = 45.0f;
+    float Braking = 28.0f;
     float TurnRate = 2.0f;
     float WheelRotation = 0.0f;
 
     // Small physics tuning params
     float Grip = 0.8f; // higher reduces lateral sliding
-    float AerodynamicDrag = 0.02f; // simple drag coefficient
-    float RollingResistance = 0.01f; // low speed resistance
-    float SteeringResponsiveness = 3.0f; // how quickly velocity aligns to car heading
+    float AerodynamicDrag = 0.008f;
+    float RollingResistance = 0.003f;
+
+    float SteeringResponsiveness = 1.5f; // how quickly velocity aligns to car heading
 
     // Handbrake / drift
     bool Handbrake = false;
@@ -58,9 +59,10 @@ private:
     CarMesh wheelMesh;
     unsigned int textureID;
 
-    void HandleCollision();   
+    void HandleCollision();
 
     bool loadObj(const std::string& path, CarMesh& mesh);
     unsigned int loadTexture(const char* path);
     void calculateNormals(CarMesh& mesh);
 };
+

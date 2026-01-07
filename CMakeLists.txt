@@ -21,7 +21,7 @@ file(GLOB_RECURSE SRC_FILES_GAME "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 add_executable(${PROJECT_NAME}
     ${SRC_FILES_GAME}
     ${IMGUI_SOURCES}
- "src/city.h" "src/City.cpp" "src/Model.cpp" "src/Karting.h" "src/RaceCar.h" "src/RaceCar.cpp") 
+ "src/city.h" "src/City.cpp" "src/Model.cpp" "src/Karting.h" "src/RaceCar.h" "src/RaceCar.cpp" "src/TrackCollision.h" "src/TrackCollision.cpp") 
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${IMGUI_DIR}

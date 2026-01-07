@@ -70,7 +70,7 @@ bool RaceCar::loadAssets() {
 
 
 void RaceCar::Update(float deltaTime) {
-    PreviousPosition = Position;   
+    PreviousPosition = Position;
 
     // Compute forward vector from yaw to ensure consistency
     FrontVector.x = sin(glm::radians(Yaw));
@@ -170,7 +170,7 @@ void RaceCar::Update(float deltaTime) {
     // Keep grounded
     Position.y = 0.0f;
 
-    HandleCollision();  
+    HandleCollision();
 
     float s = glm::length(Velocity);
     if (s > 0.1f) {
@@ -194,7 +194,7 @@ void RaceCar::HandleCollision() {
 
     if (collided) {
         Position = PreviousPosition;
-        Velocity = glm::vec3(0.0f); 
+        Velocity = glm::vec3(0.0f);
     }
 }
 

@@ -16,6 +16,7 @@
 #include "Camera.h"
 #include "RaceCar.h"
 #include "Track.h"
+#include "TrackCollision.h"
 #include "City.h"
 #include "Model.h"      
 
@@ -498,40 +499,75 @@ void RenderMainMenu() {
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
 
     if (ImGui::Button("START RACE", buttonSize)) {
+
         currentState = RACING;
+
         if (car) {
+
             glm::vec3 scaleFactor(0.1f); // taki sam jak model toru
+
             glm::vec3 startLeft(-127.81f, 0.0f, 204.38f);
+
             glm::vec3 startRight(-58.75f, 0.0f, 203.17f);
 
+
+
             // punkt startowy na środku linii startu
+
             glm::vec3 startPos = (startLeft + startRight) * 0.5f;
 
+
+
             // kierunek wzdłuż toru
+
             glm::vec3 dir = glm::normalize(startRight - startLeft);
 
+
+
             // przesunięcie samochodu daleko w tył
+
             float offsetBack = 95.0f;
+
             startPos -= dir * offsetBack;
 
+
+
             // kierunek prostopadły do toru (w prawo)
+
             glm::vec3 rightVec = glm::normalize(glm::cross(dir, glm::vec3(0.0f, 1.0f, 0.0f)));
 
+
+
             // przesunięcie w lewo, aby samochód nie wchodził w beton
+
             float offsetSide = 5.0f; // zwiększ jeśli trzeba więcej
+
             startPos -= rightVec * offsetSide;
 
+
+
             // dopasowanie do skali toru
+
             startPos *= scaleFactor;
 
+
+
             // ustawienie samochodu
+
             float startYaw = glm::degrees(atan2(dir.x, dir.z));
+
             car->Position = startPos;
+
             car->Velocity = glm::vec3(0.0f);
+
             car->Yaw = startYaw;
+
             car->FrontVector = glm::normalize(glm::vec3(sin(glm::radians(startYaw)), 0.0f, cos(glm::radians(startYaw))));
 
+
+
         }
+
     }
     ImGui::PopStyleColor(5);
     ImGui::Spacing(); ImGui::Spacing();
@@ -618,44 +654,105 @@ int main() {
     city->loadModel();
 
     kartingMap = new Model("assets/karting/gp.obj");
+        TrackCollision::Init(2.0f);;
 
-    while (!glfwWindowShouldClose(window)) {
-        float currentFrame = glfwGetTime();
-        float deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
+        while (!glfwWindowShouldClose(window)) {
 
-        if (currentState == SPLASH_SCREEN) {
-            splashTimer += deltaTime;
-            if (splashTimer > 2.5f) currentState = MAIN_MENU;
-        }
-        else if (currentState == MAIN_MENU) {
-            carMenuRotation += 90.0f * deltaTime;
-            if (carMenuRotation > 360.0f) carMenuRotation -= 360.0f;
-            backgroundYaw += 3.0f * deltaTime;
-            if (backgroundYaw > 360.0f) backgroundYaw -= 360.0f;
-        }
-        else if (currentState == RACING) {
-            processCarInput(deltaTime);
-            car->Update(deltaTime);
-        }
+            float currentFrame = glfwGetTime();
 
-        if (camera && car) {
-            if (currentState == RACING) {
-                if (cockpitView) {
-                    glm::vec3 cockpitOffset(0.0f, 0.7f, 0.2f);
-                    camera->Position = car->Position
-                        + car->FrontVector * cockpitOffset.z
-                        + glm::vec3(0.0f, cockpitOffset.y, 0.0f);
-                    camera->Front = glm::normalize(car->FrontVector);
+            float deltaTime = currentFrame - lastFrame;
+
+            lastFrame = currentFrame;
+
+
+
+            if (currentState == SPLASH_SCREEN) {
+
+                splashTimer += deltaTime;
+
+                if (splashTimer > 2.5f) currentState = MAIN_MENU;
+
+            }
+
+            else if (currentState == MAIN_MENU) {
+
+                carMenuRotation += 90.0f * deltaTime;
+
+                if (carMenuRotation > 360.0f) carMenuRotation -= 360.0f;
+
+                backgroundYaw += 3.0f * deltaTime;
+
+                if (backgroundYaw > 360.0f) backgroundYaw -= 360.0f;
+
+            }
+
+            // ... wewnątrz pętli while ...
+            else if (currentState == RACING) {
+                processCarInput(deltaTime);
+
+                // 1. Zapamiętujemy pozycję przed aktualizacją fizyki
+                glm::vec3 lastSafePos = car->Position;
+
+                // 2. Wykonujemy ruch (fizyka oblicza nową pozycję na podstawie prędkości)
+                car->Update(deltaTime);
+
+                // 3. Sprawdzamy kolizję
+                // 3. Sprawdzamy kolizję
+                if (selectedTrack == 2) {
+                    TrackCollision track; // Tworzymy instancję klasy
+
+                    // Zmieniamy CheckCollision na IsOutsideTrack
+                    if (track.CheckCollision(car->Position, 0.35f)) {
+                        car->Position = lastSafePos;
+                        car->Velocity *= -0.25f; // lekkie odbicie
+                    }
                 }
+
+                // Logowanie (klawisz P)
+                static float logTimer = 0.0f;
+                logTimer += deltaTime;
+                if (keys[GLFW_KEY_P] && logTimer > 0.2f) {
+                    std::cout << "AKTUALNA POZYCJA: X: " << car->Position.x << " Z: " << car->Position.z << std::endl;
+                    logTimer = 0.0f;
+                }
+            }
+
+
+
+            if (camera && car) {
+
+                if (currentState == RACING) {
+
+                    if (cockpitView) {
+
+                        glm::vec3 cockpitOffset(0.0f, 0.7f, 0.2f);
+
+                        camera->Position = car->Position
+
+                            + car->FrontVector * cockpitOffset.z
+
+                            + glm::vec3(0.0f, cockpitOffset.y, 0.0f);
+
+                        camera->Front = glm::normalize(car->FrontVector);
+
+                    }
+
+                    else {
+
+                        camera->FollowCar(car->Position, car->FrontVector);
+
+                    }
+
+                }
+
                 else {
-                    camera->FollowCar(car->Position, car->FrontVector);
+
+                    camera->Position = glm::vec3(0.0f, 2.5f, 5.0f);
+
                 }
+
             }
-            else {
-                camera->Position = glm::vec3(0.0f, 2.5f, 5.0f);
-            }
-        }
+
 
         glBindFramebuffer(GL_FRAMEBUFFER, FBO_Scene);
         glEnable(GL_DEPTH_TEST);
