@@ -48,6 +48,7 @@ enum GameState {
 };
 
 RaceCar* car = nullptr;
+RaceCar* aiCar = nullptr; // AI companion car
 Camera* camera = nullptr;
 Track* track = nullptr;
 City* city = nullptr;
@@ -77,7 +78,7 @@ float backgroundYaw = 0.0f;
 bool raceTimerActive = false;
 float raceTimeLeft = 60.0f;   // 60 секунд
 bool raceFinished = false;
-bool raceWon = false;
+bool raceWon = false; // player won
 
 // ===== LAP SYSTEM =====
 int currentLap = 1;
@@ -87,6 +88,15 @@ int totalLaps = 1;   // поки 1 коло
 glm::vec3 lapStartPosition;
 float lapFinishRadius = 1.5f; // радіус фінішу (підганяється)
 bool leftStartZone = false;   // щоб не фінішило одразу
+
+// AI race state
+int aiCurrentLap = 1;
+bool aiLeftStartZone = false;
+bool aiRaceFinished = false;
+bool aiRaceWon = false;
+
+// Track forward direction in world units (initialized at race start)
+glm::vec3 trackForward = glm::vec3(0.0f, 0.0f, 1.0f);
 
 // New: race countdown state
 bool raceCountdownActive = false;
@@ -609,7 +619,13 @@ void RenderMainMenu() {
             currentLap = 1;
             totalLaps = 1;
 
+            // AI car race state reset
+            aiCurrentLap = 1;
+            aiLeftStartZone = false;
+            aiRaceFinished = false;
+            aiRaceWon = false;
 
+            trackForward = glm::normalize(dir); // set initial track forward direction
 
             car->Velocity = glm::vec3(0.0f);
 
@@ -705,6 +721,12 @@ int main() {
 
     car = new RaceCar(glm::vec3(0.0f, 0.1f, 0.0f));
     car->loadAssets();
+
+    // create AI companion car positioned slightly behind/to the left
+    aiCar = new RaceCar(car->Position + glm::vec3(-3.0f, 0.0f, -3.0f));
+    aiCar->loadAssets();
+    aiCar->MaxSpeed = car->MaxSpeed * 0.95f; // slightly slower than player by default
+
     camera = new Camera(glm::vec3(0.0f, 3.0f, 5.0f));
     track = new Track();
     city = new City(glm::vec3(0.0f, 0.0f, 0.0f));
@@ -761,11 +783,56 @@ int main() {
                 if (!raceCountdownActive && !showGoAnimation) {
                     processCarInput(deltaTime);
 
-                    // 1. Zapamiętujemy pozycję przed aktualizacją fizyki
+                    // 1. Zapamiętujemy pozycję przed aktualizacją фізики
                     glm::vec3 lastSafePos = car->Position;
 
-                    // 2. Wykonujemy ruch (fizyka oblicza nową pozycję na podstawie prędkości)
+                    // 2. Wykonujemy ruch (fizyka обчислює новą pozycję na podstawie szybkości)
                     car->Update(deltaTime);
+
+                    // Update AI car: simple follow logic
+                    if (aiCar) {
+                        // Compute vector to player
+                        glm::vec3 toPlayer = car->Position - aiCar->Position;
+                        float dist = glm::length(toPlayer);
+
+                        // Desired yaw towards player
+                        float desiredYaw = glm::degrees(atan2(toPlayer.x, toPlayer.z));
+                        float yawDiff = desiredYaw - aiCar->Yaw;
+                        // normalize to [-180,180]
+                        while (yawDiff > 180.0f) yawDiff -= 360.0f;
+                        while (yawDiff < -180.0f) yawDiff += 360.0f;
+
+                        // Steering input mapping (left positive, right negative)
+                        float aiSteer = glm::clamp(yawDiff / 45.0f, -1.0f, 1.0f);
+                        aiCar->SteeringInput = aiSteer;
+
+                        // Throttle based on distance and orientation
+                        float forwardDot = glm::dot(glm::normalize(toPlayer + glm::vec3(0.001f)), aiCar->FrontVector);
+                        if (dist > 8.0f) aiCar->ThrottleInput = 1.0f;
+                        else if (dist > 3.0f) aiCar->ThrottleInput = 0.6f;
+                        else if (dist > 1.5f) aiCar->ThrottleInput = 0.2f;
+                        else aiCar->ThrottleInput = 0.0f;
+
+                        // Apply yaw change similar to player steering logic
+                        float aiSpeed = glm::length(aiCar->Velocity);
+                        if (aiSpeed > 0.1f) {
+                            float turnAmount = aiCar->TurnRate * deltaTime * 50.0f;
+                            aiCar->Yaw += turnAmount * aiSteer;
+
+                            aiCar->FrontVector.x = sin(glm::radians(aiCar->Yaw));
+                            aiCar->FrontVector.z = cos(glm::radians(aiCar->Yaw));
+                            aiCar->FrontVector.y = 0.0f;
+                            aiCar->FrontVector = glm::normalize(aiCar->FrontVector);
+                        }
+
+                        aiCar->Update(deltaTime);
+
+                        // clamp AI velocity
+                        float aiSpd = glm::length(aiCar->Velocity);
+                        if (aiSpd > aiCar->MaxSpeed)
+                            aiCar->Velocity = glm::normalize(aiCar->Velocity) * aiCar->MaxSpeed;
+                    }
+
                     // clamp velocity to MaxSpeed after Update
                     float speed = glm::length(car->Velocity);
                     if (speed > car->MaxSpeed) {
@@ -789,6 +856,24 @@ int main() {
                         }
 
                         leftStartZone = false; // щоб не зараховувалось кілька разів
+                    }
+
+                    // AI finish check (simplified)
+                    dist = glm::distance(aiCar->Position, lapStartPosition);
+                    if (!aiLeftStartZone && dist > lapFinishRadius * 2.0f)
+                        aiLeftStartZone = true;
+
+                    if (aiLeftStartZone && dist < lapFinishRadius && !aiRaceFinished) {
+                        aiCurrentLap++;
+
+                        if (aiCurrentLap > totalLaps) {
+                            aiRaceFinished = true;
+                            aiRaceWon = true;
+                            // You can add here a logic to slow down the AI or make it stop
+                            aiCar->Velocity = glm::vec3(0.0f);
+                        }
+
+                        aiLeftStartZone = false;
                     }
 
 
@@ -925,6 +1010,15 @@ int main() {
             else if (currentState == RACING) {
                 car->Draw(carTrackShader);
             }
+        }
+
+        // Draw AI car (already updated above)
+        if (aiCar && currentState == RACING) {
+            carTrackShader.use();
+            carTrackShader.setVec3("objectColor", glm::vec3(0.2f, 0.8f, 0.2f));
+            aiCar->Draw(carTrackShader);
+            // restore objectColor for further draws
+            carTrackShader.setVec3("objectColor", carCustomColor);
         }
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -1214,7 +1308,7 @@ int main() {
             ImGui::TextColored(
                 ImVec4(1.0f, 1.0f, 1.0f, alpha),
                 "%.2f s",
-                60.0f - raceTimeLeft   // якщо маєш іншу змienну czasu — заміни тут
+                60.0f - raceTimeLeft   // якщо маєш іншу змiennu czasu — заміни тут
             );
 
             ImGui::SetCursorPos(ImVec2(40, 145));
@@ -1271,6 +1365,7 @@ int main() {
     glDeleteBuffers(1, &quadVBO);
 
     delete car;
+    delete aiCar;
     delete camera;
     delete track;
     delete city;
