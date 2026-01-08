@@ -47,7 +47,8 @@ RaceCar::RaceCar(glm::vec3 startPosition)
     PreviousPosition(startPosition),
     Velocity(0.0f),
     Yaw(0.0f),
-    textureID(0)
+    textureID(0),
+    Throttle(0.0f), ThrottleInput(0.0f), ThrottleResponse(3.5f)
 {
     FrontVector = glm::vec3(0.0f, 0.0f, 1.0f);
 }
@@ -78,6 +79,10 @@ void RaceCar::Update(float deltaTime) {
     FrontVector.y = 0.0f;
     FrontVector = glm::normalize(FrontVector);
 
+    // Smooth throttle input toward desired input
+    float tResponse = glm::clamp(ThrottleResponse * deltaTime, 0.0f, 1.0f);
+    Throttle = glm::mix(Throttle, ThrottleInput, tResponse);
+
     // Decompose velocity into forward and lateral components
     glm::vec3 forward = FrontVector;
     float speed = glm::length(Velocity);
@@ -87,10 +92,30 @@ void RaceCar::Update(float deltaTime) {
     // Effective grip starts as base Grip
     float effectiveGrip = Grip;
 
+    // Apply throttle acceleration to forward component
+    float forwardSpeed = glm::dot(Velocity, forward);
+
+    // Positive throttle -> accelerate forward
+    if (Throttle > 0.01f && !Handbrake) {
+        float desiredAccel = Throttle * Acceleration; // m/s^2
+        forwardSpeed += desiredAccel * deltaTime;
+    }
+    // Negative throttle -> reverse / braking input
+    else if (Throttle < -0.01f) {
+        float desiredBrake = -Throttle * Braking;
+        forwardSpeed -= desiredBrake * deltaTime;
+    }
+
+    // If space (handbrake) is held it will be handled below
+
+    // Prevent instant overspeed: clamp forwardSpeed to MaxSpeed
+    if (forwardSpeed > MaxSpeed) forwardSpeed = MaxSpeed;
+    if (forwardSpeed < -MaxSpeed * 0.5f) forwardSpeed = -MaxSpeed * 0.5f; // limited reverse
+
+    velLong = forward * forwardSpeed;
+
     // If handbrake is held: smoothly brake forward velocity and enable sliding
     if (Handbrake) {
-        // use exponential multiplier for gentle deceleration
-        float forwardSpeed = glm::dot(Velocity, forward);
         float newForwardSpeed = forwardSpeed * powf(HandbrakeDeceleration, deltaTime);
         if (newForwardSpeed < 0.0f) newForwardSpeed = 0.0f;
         velLong = forward * newForwardSpeed;
@@ -101,7 +126,7 @@ void RaceCar::Update(float deltaTime) {
         // lateral slide based on steering input (user steers the slide direction)
         float steer = glm::clamp(SteeringInput, -1.0f, 1.0f);
         glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
-        float lateralAmount = 0.25f * (glm::clamp(forwardSpeed, 0.0f, MaxSpeed) / (MaxSpeed + 0.1f));
+        float lateralAmount = 0.25f * (glm::clamp(newForwardSpeed, 0.0f, MaxSpeed) / (MaxSpeed + 0.1f));
         velLat += right * (-steer) * lateralAmount;
 
         // prevent handbrake from increasing total speed: cap combined magnitude to previous speed, with small energy loss
@@ -174,8 +199,8 @@ void RaceCar::Update(float deltaTime) {
 
     float s = glm::length(Velocity);
     if (s > 0.1f) {
-        float forwardSpeed = glm::dot(Velocity, forward);
-        WheelRotation += forwardSpeed * deltaTime * 10.0f;
+        float forwardSpeedNow = glm::dot(Velocity, forward);
+        WheelRotation += forwardSpeedNow * deltaTime * 10.0f;
     }
 }
 

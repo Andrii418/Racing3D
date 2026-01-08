@@ -184,16 +184,20 @@ void processCarInput(float deltaTime) {
 
     float currentSpeed = glm::length(car->Velocity);
 
-    // If handbrake is held, ignore throttle input so it always brakes
+    // If handbrake is held
     bool handbrakePressed = keys[GLFW_KEY_SPACE];
 
-    if (keys[GLFW_KEY_W] && !handbrakePressed) {
-        car->Velocity += car->FrontVector * car->Acceleration * deltaTime;
-        // clamp to MaxSpeed immediately after applying throttle
-        float vlen = glm::length(car->Velocity);
-        if (vlen > car->MaxSpeed) car->Velocity = glm::normalize(car->Velocity) * car->MaxSpeed;
+    // Throttle input: W = forward, S = reverse/brake
+    float desiredThrottle = 0.0f;
+    if (handbrakePressed) {
+        desiredThrottle = 0.0f; // disable throttle when handbrake is held
     }
-    if (keys[GLFW_KEY_S]) car->Velocity -= car->FrontVector * car->Braking * deltaTime;
+    else {
+        if (keys[GLFW_KEY_W]) desiredThrottle = 1.0f;
+        else if (keys[GLFW_KEY_S]) desiredThrottle = -1.0f;
+    }
+
+    car->ThrottleInput = desiredThrottle;
 
     // handbrake input
     car->Handbrake = handbrakePressed;
@@ -582,6 +586,9 @@ void RenderMainMenu() {
             // dopasowanie do skali toru
 
             startPos *= scaleFactor;
+
+            // przesunięcie o dodatkowe 0.2 metra w lewo (w jednostkach gry)
+            startPos -= rightVec * 0.3f;
 
 
 
@@ -1207,7 +1214,7 @@ int main() {
             ImGui::TextColored(
                 ImVec4(1.0f, 1.0f, 1.0f, alpha),
                 "%.2f s",
-                60.0f - raceTimeLeft   // якщо маєш іншу змінну часу — заміни тут
+                60.0f - raceTimeLeft   // якщо маєш іншу змienну czasu — заміни тут
             );
 
             ImGui::SetCursorPos(ImVec2(40, 145));
