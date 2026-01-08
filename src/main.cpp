@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <string>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h" 
@@ -71,6 +72,30 @@ float timeOfDay = 0.75f;
 float carMenuRotation = 0.0f;
 glm::vec3 menuCarPosition = glm::vec3(0.0f, 0.5f, 0.0f);
 float backgroundYaw = 0.0f;
+
+// ===== RACE TIMER / LAP LOGIC =====
+bool raceTimerActive = false;
+float raceTimeLeft = 60.0f;   // 60 секунд
+bool raceFinished = false;
+bool raceWon = false;
+
+// ===== LAP SYSTEM =====
+int currentLap = 1;
+int totalLaps = 1;   // поки 1 коло
+
+
+glm::vec3 lapStartPosition;
+float lapFinishRadius = 1.5f; // радіус фінішу (підганяється)
+bool leftStartZone = false;   // щоб не фінішило одразу
+
+// New: race countdown state
+bool raceCountdownActive = false;
+float raceCountdown = 0.0f; // seconds
+
+// GO! animation
+bool showGoAnimation = false;
+float goTimer = 0.0f;
+const float goDuration = 0.8f;
 
 void setupFramebuffer(int width, int height);
 
@@ -154,12 +179,20 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 void processCarInput(float deltaTime) {
     if (!car || currentState != RACING) return;
 
+    // If countdown or GO animation active, ignore player input until it finishes
+    if (raceCountdownActive || showGoAnimation) return;
+
     float currentSpeed = glm::length(car->Velocity);
 
     // If handbrake is held, ignore throttle input so it always brakes
     bool handbrakePressed = keys[GLFW_KEY_SPACE];
 
-    if (keys[GLFW_KEY_W] && !handbrakePressed) car->Velocity += car->FrontVector * car->Acceleration * deltaTime;
+    if (keys[GLFW_KEY_W] && !handbrakePressed) {
+        car->Velocity += car->FrontVector * car->Acceleration * deltaTime;
+        // clamp to MaxSpeed immediately after applying throttle
+        float vlen = glm::length(car->Velocity);
+        if (vlen > car->MaxSpeed) car->Velocity = glm::normalize(car->Velocity) * car->MaxSpeed;
+    }
     if (keys[GLFW_KEY_S]) car->Velocity -= car->FrontVector * car->Braking * deltaTime;
 
     // handbrake input
@@ -412,7 +445,7 @@ void RenderSettingsMenu() {
         ImGui::SliderFloat("Rolling Resistance", &car->RollingResistance, 0.0f, 0.1f);
         ImGui::SliderFloat("Steering Responsiveness", &car->SteeringResponsiveness, 0.0f, 10.0f);
         ImGui::SliderFloat("Handbrake Grip Reduction", &car->HandbrakeGripReduction, 0.0f, 1.0f);
-        ImGui::SliderFloat("Max Speed (m/s)", &car->MaxSpeed, 5.0f, 80.0f);
+        ImGui::SliderFloat("Max Speed (m/s)", &car->MaxSpeed, 5.0f, 18.0f);
         ImGui::Checkbox("Handbrake (toggle)", &car->Handbrake);
     }
 
@@ -512,7 +545,7 @@ void RenderMainMenu() {
 
 
 
-            // punkt startowy na środku linii startu
+            // punkt startowy na середину лінії старту
 
             glm::vec3 startPos = (startLeft + startRight) * 0.5f;
 
@@ -558,6 +591,19 @@ void RenderMainMenu() {
 
             car->Position = startPos;
 
+            // ===== RACE RESET =====
+            lapStartPosition = car->Position;
+            raceTimeLeft = 60.0f;
+            raceFinished = false;
+            raceWon = false;
+            leftStartZone = false;
+            raceTimerActive = false; // стартує після GO
+
+            currentLap = 1;
+            totalLaps = 1;
+
+
+
             car->Velocity = glm::vec3(0.0f);
 
             car->Yaw = startYaw;
@@ -567,6 +613,11 @@ void RenderMainMenu() {
 
 
         }
+
+        // start the 3-2-1 countdown
+        raceCountdownActive = true;
+        raceCountdown = 3.0f;
+        showGoAnimation = false;
 
     }
     ImGui::PopStyleColor(5);
@@ -688,35 +739,98 @@ int main() {
 
             // ... wewnątrz pętli while ...
             else if (currentState == RACING) {
-                processCarInput(deltaTime);
-
-                // 1. Zapamiętujemy pozycję przed aktualizacją fizyki
-                glm::vec3 lastSafePos = car->Position;
-
-                // 2. Wykonujemy ruch (fizyka oblicza nową pozycję na podstawie prędkości)
-                car->Update(deltaTime);
-
-                // 3. Sprawdzamy kolizję
-                // 3. Sprawdzamy kolizję
-                if (selectedTrack == 2) {
-                    TrackCollision track; // Tworzymy instancję klasy
-
-                    // Zmieniamy CheckCollision na IsOutsideTrack
-                    if (track.CheckCollision(car->Position, 0.35f)) {
-                        car->Position = lastSafePos;
-                        car->Velocity *= -0.25f; // lekkie odbicie
+                // ===== RACE TIMER UPDATE =====
+                if (raceTimerActive && !raceFinished) {
+                    raceTimeLeft -= deltaTime;
+                    if (raceTimeLeft <= 0.0f) {
+                        raceTimeLeft = 0.0f;
+                        raceFinished = true;
+                        raceWon = false;
+                        raceTimerActive = false;
                     }
                 }
 
-                // Logowanie (klawisz P)
-                static float logTimer = 0.0f;
-                logTimer += deltaTime;
-                if (keys[GLFW_KEY_P] && logTimer > 0.2f) {
-                    std::cout << "AKTUALNA POZYCJA: X: " << car->Position.x << " Z: " << car->Position.z << std::endl;
-                    logTimer = 0.0f;
+                // Only process input and physics if countdown and GO animation are not active
+                if (!raceCountdownActive && !showGoAnimation) {
+                    processCarInput(deltaTime);
+
+                    // 1. Zapamiętujemy pozycję przed aktualizacją fizyki
+                    glm::vec3 lastSafePos = car->Position;
+
+                    // 2. Wykonujemy ruch (fizyka oblicza nową pozycję na podstawie prędkości)
+                    car->Update(deltaTime);
+                    // clamp velocity to MaxSpeed after Update
+                    float speed = glm::length(car->Velocity);
+                    if (speed > car->MaxSpeed) {
+                        car->Velocity = glm::normalize(car->Velocity) * car->MaxSpeed;
+                    }
+                    // ===== LAP FINISH CHECK =====
+                    float dist = glm::distance(car->Position, lapStartPosition);
+
+                    if (!leftStartZone && dist > lapFinishRadius * 2.0f)
+                        leftStartZone = true;
+
+                    if (leftStartZone && dist < lapFinishRadius && raceTimerActive) {
+
+                        currentLap++;
+
+                        if (currentLap > totalLaps) {
+                            raceFinished = true;
+                            raceWon = true;
+                            raceTimerActive = false;
+                            car->Velocity = glm::vec3(0.0f);
+                        }
+
+                        leftStartZone = false; // щоб не зараховувалось кілька разів
+                    }
+
+
+
+                    // 3. Sprawdzamy kolizję
+                    if (selectedTrack == 2) {
+                        TrackCollision track; // Tworzymy instancję klasy
+
+                        if (track.CheckCollision(car->Position, 0.35f)) {
+                            car->Position = lastSafePos;
+                            car->Velocity *= -0.25f; // lekkie odbicie
+                        }
+                    }
+
+                    // Logowanie (klawisz P)
+                    static float logTimer = 0.0f;
+                    logTimer += deltaTime;
+                    if (keys[GLFW_KEY_P] && logTimer > 0.2f) {
+                        std::cout << "AKTUALNA POZYCJA: X: " << car->Position.x << " Z: " << car->Position.z << std::endl;
+                        logTimer = 0.0f;
+                    }
+                } else {
+                    // countdown active -> reduce timer
+                    if (raceCountdownActive) {
+                        raceCountdown -= deltaTime;
+                        if (raceCountdown <= 0.0f) {
+                            raceCountdownActive = false;
+                            // start GO! animation and keep player blocked until it finishes
+                            showGoAnimation = true;
+                            goTimer = goDuration;
+                            if (car) {
+                                car->Velocity = glm::vec3(0.0f);
+                                car->Handbrake = true; // keep handbrake until GO! ends
+                            }
+                        }
+                    }
+
+                    // GO! animation timing
+                    if (showGoAnimation) {
+                        goTimer -= deltaTime;
+                        if (goTimer <= 0.0f) {
+                            showGoAnimation = false;
+                            // release handbrake so player can drive
+                            if (car) car->Handbrake = false;
+                            raceTimerActive = true;
+                        }
+                    }
                 }
             }
-
 
 
             if (camera && car) {
@@ -828,22 +942,310 @@ int main() {
         if (currentState == SPLASH_SCREEN) RenderSplashScreen();
         else if (currentState == MAIN_MENU) RenderMainMenu();
         else if (currentState == RACING && car) {
-            ImGui::SetNextWindowPos(ImVec2(10, current_height - 60));
-            ImGui::Begin("HUD", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
-            ImGui::Text("Speed: %.1f km/h", glm::length(car->Velocity) * 3.6f);
-            ImGui::Text("View: %s", cockpitView ? "Cockpit" : "Chase");
-            ImGui::End();
+            // If countdown is active, show animated numbers
+            if (raceCountdownActive) {
+                int displayNum = (int)std::ceil(raceCountdown);
+                // progress from 0..1 for current number (1 when fully visible, 0 when just switched)
+                float frac = raceCountdown - std::floor(raceCountdown);
+                float progress = 1.0f - frac; // increases as number approaches integer
+                progress = glm::clamp(progress, 0.0f, 1.0f);
 
-            ImGui::SetNextWindowPos(ImVec2(10, 10));
-            ImGui::Begin("RaceMenu", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
-            if (ImGui::Button("BACK TO MAIN MENU", ImVec2(200, 40))) {
-                currentState = MAIN_MENU;
-                showSettings = false;
-                showCarSelect = false;
-                showTrackSelect = false;
+                // Make numbers much larger for better visibility
+                float scale = glm::mix(2.0f, 6.0f, progress);
+                float alpha = glm::mix(0.15f, 1.0f, progress);
+
+                std::string txt = std::to_string(displayNum);
+
+                ImGui::SetNextWindowPos(ImVec2(current_width * 0.5f, current_height * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+                ImGui::SetNextWindowSize(ImVec2(800, 480));
+                ImGui::Begin("Race Countdown", nullptr,
+                    ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings);
+
+                // shadow
+                ImGui::SetWindowFontScale(scale);
+                ImVec2 winSize = ImGui::GetWindowSize();
+                ImVec2 textSize = ImGui::CalcTextSize(txt.c_str());
+                float x = (winSize.x - textSize.x) * 0.5f;
+                float y = (winSize.y - textSize.y) * 0.45f;
+
+                ImGui::SetCursorPos(ImVec2(x + 6.0f, y + 6.0f));
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 0, alpha * 0.9f));
+                ImGui::TextUnformatted(txt.c_str());
+                ImGui::PopStyleColor();
+
+                // main text
+                ImGui::SetCursorPos(ImVec2(x, y));
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.6f, 0.1f, alpha));
+                ImGui::TextUnformatted(txt.c_str());
+                ImGui::PopStyleColor();
+
+                ImGui::SetWindowFontScale(1.0f);
+                ImGui::End();
+
+                // small HUD below
+                ImGui::SetNextWindowPos(ImVec2(10, current_height - 60));
+                
             }
+            else if (showGoAnimation) {
+                // GO! animated pop + fade
+                float t = glm::clamp(goTimer / goDuration, 0.0f, 1.0f);
+                // at start t=1, at end t=0 -> we want scale big at start -> map to [3.0..8.0]
+                float scale = glm::mix(3.0f, 8.0f, t);
+                float alpha = glm::mix(0.0f, 1.0f, t);
+                // slight pulse
+                float pulse = 1.0f + 0.06f * std::sin((1.0f - t) * 6.28318f * 2.0f);
+                scale *= pulse;
+
+                std::string txt = "GO!";
+
+                ImGui::SetNextWindowPos(ImVec2(current_width * 0.5f, current_height * 0.45f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+                ImGui::SetNextWindowSize(ImVec2(900, 480));
+                ImGui::Begin("Race GO", nullptr,
+                    ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings);
+
+                ImGui::SetWindowFontScale(scale);
+                ImVec2 winSize = ImGui::GetWindowSize();
+                ImVec2 textSize = ImGui::CalcTextSize(txt.c_str());
+                float x = (winSize.x - textSize.x) * 0.5f;
+                float y = (winSize.y - textSize.y) * 0.5f;
+
+                // shadow
+                ImGui::SetCursorPos(ImVec2(x + 8.0f, y + 8.0f));
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 0, alpha * 0.95f));
+                ImGui::TextUnformatted(txt.c_str());
+                ImGui::PopStyleColor();
+
+                // main colorful text (green)
+                ImGui::SetCursorPos(ImVec2(x, y));
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.1f, 0.95f, 0.25f, alpha));
+                ImGui::TextUnformatted(txt.c_str());
+                ImGui::PopStyleColor();
+
+                ImGui::SetWindowFontScale(1.0f);
+                ImGui::End();
+
+                // small HUD below
+                ImGui::SetNextWindowPos(ImVec2(10, current_height - 60));
+                
+            }
+
+            // Normal in-race UI when not counting down/animating
+            if (!raceCountdownActive && !showGoAnimation) {
+                ImGui::SetNextWindowPos(ImVec2(10, current_height - 60));
+                float panelWidth = 320.0f;
+                float panelHeight = 170.0f;
+
+                ImGui::SetNextWindowPos(
+                    ImVec2(current_width - panelWidth - 20.0f, 20.0f),
+                    ImGuiCond_Always
+                );
+                ImGui::SetNextWindowSize(ImVec2(panelWidth, panelHeight));
+
+                ImGui::Begin("RaceHUD", nullptr,
+                    ImGuiWindowFlags_NoTitleBar |
+                    ImGuiWindowFlags_NoResize |
+                    ImGuiWindowFlags_NoMove |
+                    ImGuiWindowFlags_NoScrollbar |
+                    ImGuiWindowFlags_NoSavedSettings);
+
+                ImDrawList* draw = ImGui::GetWindowDrawList();
+                ImVec2 pos = ImGui::GetWindowPos();
+                ImVec2 size = ImGui::GetWindowSize();
+
+                // Background (glass style)
+                draw->AddRectFilled(
+                    pos,
+                    ImVec2(pos.x + size.x, pos.y + size.y),
+                    IM_COL32(10, 10, 10, 200),
+                    18.0f
+                );
+
+                // Neon border
+                draw->AddRect(
+                    pos,
+                    ImVec2(pos.x + size.x, pos.y + size.y),
+                    IM_COL32(255, 140, 40, 220),
+                    18.0f,
+                    0,
+                    2.5f
+                );
+
+                ImGui::Dummy(ImVec2(0, 8));
+
+                // ===== SPEED =====
+                float speedKmh = glm::length(car->Velocity) * 3.6f;
+                ImGui::SetWindowFontScale(2.6f);
+                ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.15f, 1.0f), "%.0f km/h", speedKmh);
+
+                ImGui::SetWindowFontScale(1.0f);
+                ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "SPEED");
+
+                ImGui::Separator();
+
+                // ===== TIME =====
+                ImGui::SetWindowFontScale(1.8f);
+                ImVec4 timeColor =
+                    raceTimeLeft < 10.0f
+                    ? ImVec4(1.0f, 0.2f, 0.2f, 1.0f)
+                    : ImVec4(0.2f, 0.9f, 1.0f, 1.0f);
+
+                ImGui::TextColored(timeColor, "TIME: %.1f s", raceTimeLeft);
+
+                ImGui::SetWindowFontScale(1.0f);
+
+                ImGui::Separator();
+
+                // ===== LAP =====
+                ImGui::SetWindowFontScale(1.4f);
+                ImGui::TextColored(
+                    ImVec4(0.9f, 0.9f, 0.9f, 1.0f),
+                    "LAP %d / %d",
+                    std::min(currentLap, totalLaps),
+                    totalLaps
+                );
+                ImGui::SetWindowFontScale(1.0f);
+
+
+                ImGui::Separator();
+
+                // ===== VIEW MODE =====
+                ImGui::TextColored(
+                    ImVec4(0.8f, 0.8f, 0.8f, 1.0f),
+                    "CAMERA: %s",
+                    cockpitView ? "COCKPIT" : "CHASE"
+                );
+
+                ImGui::End();
+
+                ImGui::SetNextWindowPos(ImVec2(10, 10));
+                ImGui::Begin("RaceMenu", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+                if (ImGui::Button("BACK TO MAIN MENU", ImVec2(200, 40))) {
+                    currentState = MAIN_MENU;
+                    showSettings = false;
+                    showCarSelect = false;
+                    showTrackSelect = false;
+                }
+                ImGui::End();
+            }
+        }
+
+        if (raceFinished && currentState == RACING) {
+
+
+            static float winAnimTime = 0.0f;
+            winAnimTime += deltaTime;
+
+            float t = glm::clamp(winAnimTime / 1.2f, 0.0f, 1.0f);
+            float scale = glm::mix(0.6f, 1.0f, t);
+            float alpha = glm::smoothstep(0.0f, 1.0f, t);
+            float glow = 0.6f + 0.4f * sin(winAnimTime * 4.0f);
+
+            ImGui::SetNextWindowPos(
+                ImVec2(current_width * 0.5f, current_height * 0.42f),
+                ImGuiCond_Always,
+                ImVec2(0.5f, 0.5f)
+            );
+
+            ImGui::SetNextWindowSize(ImVec2(560, 260));
+
+            ImGui::Begin("WIN_HUD", nullptr,
+                ImGuiWindowFlags_NoTitleBar |
+                ImGuiWindowFlags_NoResize |
+                ImGuiWindowFlags_NoMove |
+                ImGuiWindowFlags_NoBackground |
+                ImGuiWindowFlags_NoSavedSettings);
+
+            ImDrawList* draw = ImGui::GetWindowDrawList();
+            ImVec2 pos = ImGui::GetWindowPos();
+            ImVec2 size = ImGui::GetWindowSize();
+
+            // ===== GLASS BACKGROUND =====
+            draw->AddRectFilled(
+                pos,
+                ImVec2(pos.x + size.x, pos.y + size.y),
+                IM_COL32(10, 15, 20, 220),
+                20.0f
+            );
+
+            // ===== NEON BORDER =====
+            draw->AddRect(
+                pos,
+                ImVec2(pos.x + size.x, pos.y + size.y),
+                IM_COL32(0, 200, 255, (int)(200 * glow)),
+                20.0f,
+                0,
+                3.0f
+            );
+
+            // ===== TITLE =====
+            const char* title = raceWon ? "YOU  WIN" : "TIME  UP";
+
+            ImGui::SetWindowFontScale(3.2f * scale);
+            ImVec2 titleSize = ImGui::CalcTextSize(title);
+
+            ImGui::SetCursorPos(ImVec2(
+                (size.x - titleSize.x) * 0.5f,
+                30
+            ));
+
+            ImGui::PushStyleColor(
+                ImGuiCol_Text,
+                raceWon
+                ? ImVec4(1.0f, 0.75f, 0.2f, alpha)   // win orange
+                : ImVec4(1.0f, 0.2f, 0.2f, alpha)    // lose red
+            );
+            ImGui::TextUnformatted(title);
+            ImGui::PopStyleColor();
+
+            ImGui::SetWindowFontScale(1.0f);
+
+            // ===== SUMMARY =====
+            ImGui::SetCursorPos(ImVec2(40, 110));
+            ImGui::TextColored(ImVec4(0.6f, 0.9f, 1.0f, alpha), "TIME");
+
+            ImGui::SameLine(140);
+            ImGui::TextColored(
+                ImVec4(1.0f, 1.0f, 1.0f, alpha),
+                "%.2f s",
+                60.0f - raceTimeLeft   // якщо маєш іншу змінну часу — заміни тут
+            );
+
+            ImGui::SetCursorPos(ImVec2(40, 145));
+            ImGui::TextColored(ImVec4(0.6f, 0.9f, 1.0f, alpha), "LAPS");
+
+            ImGui::SameLine(140);
+            ImGui::TextColored(
+                ImVec4(1.0f, 1.0f, 1.0f, alpha),
+                "%d / %d",
+                currentLap - 1,
+                totalLaps
+            );
+
+            // ===== BACK BUTTON (RIGHT SIDE) =====
+            ImGui::SetCursorPos(ImVec2(size.x - 150, size.y - 60));
+
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.15f, 0.2f, 0.9f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.2f, 0.6f, 1.0f, 0.9f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.4f, 0.8f, 1.0f));
+
+            if (ImGui::Button("MENU", ImVec2(120, 36))) {
+                currentState = MAIN_MENU;
+
+                // 🔥 RESET RACE STATE
+                raceFinished = false;
+                raceWon = false;
+                raceTimerActive = false;
+
+                winAnimTime = 0.0f;
+            }
+
+
+            ImGui::PopStyleColor(3);
+
             ImGui::End();
         }
+
+
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -865,7 +1267,7 @@ int main() {
     delete camera;
     delete track;
     delete city;
-    delete kartingMap; 
+    delete kartingMap;
 
     glfwTerminate();
     return 0;
