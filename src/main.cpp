@@ -49,6 +49,12 @@ enum GameState {
 
 RaceCar* car = nullptr;
 RaceCar* aiCar = nullptr; // AI companion car
+#include <vector>
+
+std::vector<glm::vec3> aiWaypoints;
+int aiCurrentWaypoint = 0;
+float aiWaypointRadius = 2.7f; // jak blisko musi być AI
+
 Camera* camera = nullptr;
 Track* track = nullptr;
 City* city = nullptr;
@@ -88,6 +94,7 @@ int totalLaps = 1;   // поки 1 коло
 glm::vec3 lapStartPosition;
 float lapFinishRadius = 1.5f; // радіус фінішу (підганяється)
 bool leftStartZone = false;   // щоб не фінішило одразу
+
 
 // AI race state
 int aiCurrentLap = 1;
@@ -608,6 +615,7 @@ void RenderMainMenu() {
 
             car->Position = startPos;
 
+
             // ===== RACE RESET =====
             lapStartPosition = car->Position;
             raceTimeLeft = 60.0f;
@@ -632,6 +640,29 @@ void RenderMainMenu() {
             car->Yaw = startYaw;
 
             car->FrontVector = glm::normalize(glm::vec3(sin(glm::radians(startYaw)), 0.0f, cos(glm::radians(startYaw))));
+
+            // === AI START BARDZO BLISKO GRACZA ===
+
+            glm::vec3 forward = glm::normalize(car->FrontVector);
+
+            // Wektor w LEWO względem kierunku jazdy
+            glm::vec3 leftVec = glm::normalize(glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), forward));
+
+            // Odległość AI od gracza
+            float sideOffset = 0.3f;  // pół metra obok
+            float backOffset = 0.0f;  // równo w tył
+
+            // Pozycja startowa AI
+            glm::vec3 aiStartPos = car->Position + leftVec * sideOffset - forward * backOffset;
+
+            // Ustawienia AI
+            aiCar->Position = aiStartPos;
+            aiCar->Velocity = glm::vec3(0.0f);
+            aiCar->Yaw = car->Yaw;
+            aiCar->FrontVector = car->FrontVector;
+
+            // AI zaczyna od pierwszego waypointa
+            aiCurrentWaypoint = 0;
 
 
 
@@ -725,6 +756,88 @@ int main() {
     // create AI companion car positioned slightly behind/to the left
     aiCar = new RaceCar(car->Position + glm::vec3(-3.0f, 0.0f, -3.0f));
     aiCar->loadAssets();
+
+    aiWaypoints.clear();
+
+    aiWaypoints.push_back(glm::vec3(-17.4033f, 0.0f, 19.7189f));
+    aiWaypoints.push_back(glm::vec3(-15.3660f, 0.0f, 19.6832f));
+    aiWaypoints.push_back(glm::vec3(-13.7321f, 0.0f, 19.6545f));
+    aiWaypoints.push_back(glm::vec3(-11.6130f, 0.0f, 19.6174f));
+    aiWaypoints.push_back(glm::vec3(-9.36917f, 0.0f, 19.5781f));
+    aiWaypoints.push_back(glm::vec3(-5.78419f, 0.0f, 19.5153f));
+    aiWaypoints.push_back(glm::vec3(-5.31329f, 0.0f, 19.4698f));
+    aiWaypoints.push_back(glm::vec3(-4.38402f, 0.0f, 19.1239f));
+    aiWaypoints.push_back(glm::vec3(-4.14590f, 0.0f, 18.5770f));
+    aiWaypoints.push_back(glm::vec3(-3.85840f, 0.0f, 17.6733f));
+    aiWaypoints.push_back(glm::vec3(-3.58509f, 0.0f, 16.3736f));
+    aiWaypoints.push_back(glm::vec3(-3.60564f, 0.0f, 15.2653f));
+    aiWaypoints.push_back(glm::vec3(-3.66244f, 0.0f, 13.6701f));
+    aiWaypoints.push_back(glm::vec3(-3.97440f, 0.0f, 12.8013f));
+    aiWaypoints.push_back(glm::vec3(-4.92762f, 0.0f, 11.5202f));
+    aiWaypoints.push_back(glm::vec3(-5.81082f, 0.0f, 11.2623f));
+    aiWaypoints.push_back(glm::vec3(-7.50787f, 0.0f, 11.1497f));
+    aiWaypoints.push_back(glm::vec3(-9.61396f, 0.0f, 11.0101f));
+    aiWaypoints.push_back(glm::vec3(-12.5933f, 0.0f, 10.8900f));
+    aiWaypoints.push_back(glm::vec3(-13.8865f, 0.0f, 11.0711f));
+    aiWaypoints.push_back(glm::vec3(-14.6346f, 0.0f, 11.3402f));
+    aiWaypoints.push_back(glm::vec3(-15.3948f, 0.0f, 12.9190f));
+    aiWaypoints.push_back(glm::vec3(-16.2529f, 0.0f, 13.9903f));
+    aiWaypoints.push_back(glm::vec3(-17.4402f, 0.0f, 15.1772f));
+    aiWaypoints.push_back(glm::vec3(-18.7166f, 0.0f, 16.1678f));
+    aiWaypoints.push_back(glm::vec3(-19.7307f, 0.0f, 16.8484f));
+    aiWaypoints.push_back(glm::vec3(-20.5292f, 0.0f, 17.2504f));
+    aiWaypoints.push_back(glm::vec3(-21.6503f, 0.0f, 17.7823f));
+    aiWaypoints.push_back(glm::vec3(-22.6977f, 0.0f, 18.1117f));
+    aiWaypoints.push_back(glm::vec3(-23.8565f, 0.0f, 18.4450f));
+    aiWaypoints.push_back(glm::vec3(-25.1990f, 0.0f, 18.6440f));
+    aiWaypoints.push_back(glm::vec3(-26.2335f, 0.0f, 18.5330f));
+    aiWaypoints.push_back(glm::vec3(-27.1985f, 0.0f, 17.9697f));
+    aiWaypoints.push_back(glm::vec3(-27.5218f, 0.0f, 17.6096f));
+    aiWaypoints.push_back(glm::vec3(-27.5824f, 0.0f, 16.4448f));
+    aiWaypoints.push_back(glm::vec3(-27.4934f, 0.0f, 16.0380f));
+    aiWaypoints.push_back(glm::vec3(-27.0386f, 0.0f, 15.6751f));
+    aiWaypoints.push_back(glm::vec3(-25.8365f, 0.0f, 15.3164f));
+    aiWaypoints.push_back(glm::vec3(-25.0517f, 0.0f, 15.3764f));
+    aiWaypoints.push_back(glm::vec3(-23.9274f, 0.0f, 15.4929f));
+    aiWaypoints.push_back(glm::vec3(-22.9257f, 0.0f, 15.5876f));
+    aiWaypoints.push_back(glm::vec3(-22.4709f, 0.0f, 15.5126f));
+    aiWaypoints.push_back(glm::vec3(-21.9348f, 0.0f, 15.2519f));
+    aiWaypoints.push_back(glm::vec3(-21.5428f, 0.0f, 14.9263f));
+    aiWaypoints.push_back(glm::vec3(-20.9628f, 0.0f, 14.4443f));
+    aiWaypoints.push_back(glm::vec3(-20.2775f, 0.0f, 13.4949f));
+    aiWaypoints.push_back(glm::vec3(-20.0552f, 0.0f, 12.7826f));
+    aiWaypoints.push_back(glm::vec3(-20.1685f, 0.0f, 11.8938f));
+    aiWaypoints.push_back(glm::vec3(-20.3029f, 0.0f, 11.4411f));
+    aiWaypoints.push_back(glm::vec3(-20.8131f, 0.0f, 10.7798f));
+    aiWaypoints.push_back(glm::vec3(-22.3706f, 0.0f, 10.5592f));
+    aiWaypoints.push_back(glm::vec3(-23.2476f, 0.0f, 10.6864f));
+    aiWaypoints.push_back(glm::vec3(-24.0903f, 0.0f, 10.8968f));
+    aiWaypoints.push_back(glm::vec3(-24.8417f, 0.0f, 11.0843f));
+    aiWaypoints.push_back(glm::vec3(-25.6085f, 0.0f, 11.2758f));
+    aiWaypoints.push_back(glm::vec3(-26.3332f, 0.0f, 11.4567f));
+    aiWaypoints.push_back(glm::vec3(-27.0948f, 0.0f, 11.7497f));
+    aiWaypoints.push_back(glm::vec3(-28.6680f, 0.0f, 12.6275f));
+    aiWaypoints.push_back(glm::vec3(-29.8167f, 0.0f, 13.2684f));
+    aiWaypoints.push_back(glm::vec3(-30.8902f, 0.0f, 14.1717f));
+    aiWaypoints.push_back(glm::vec3(-31.3352f, 0.0f, 15.1534f));
+    aiWaypoints.push_back(glm::vec3(-31.4855f, 0.0f, 16.2787f));
+    aiWaypoints.push_back(glm::vec3(-31.1265f, 0.0f, 17.9219f));
+    aiWaypoints.push_back(glm::vec3(-30.3571f, 0.0f, 19.5993f));
+    aiWaypoints.push_back(glm::vec3(-29.8028f, 0.0f, 20.1476f));
+    aiWaypoints.push_back(glm::vec3(-28.7473f, 0.0f, 20.7893f));
+    aiWaypoints.push_back(glm::vec3(-26.9881f, 0.0f, 21.5204f));
+    aiWaypoints.push_back(glm::vec3(-25.9370f, 0.0f, 21.8000f));
+    aiWaypoints.push_back(glm::vec3(-24.7567f, 0.0f, 21.5176f));
+    aiWaypoints.push_back(glm::vec3(-23.8638f, 0.0f, 21.2952f));
+    aiWaypoints.push_back(glm::vec3(-22.9479f, 0.0f, 21.0669f));
+    aiWaypoints.push_back(glm::vec3(-21.7535f, 0.0f, 20.7136f));
+    aiWaypoints.push_back(glm::vec3(-20.9257f, 0.0f, 20.3663f));
+    aiWaypoints.push_back(glm::vec3(-19.7475f, 0.0f, 19.8974f));
+    aiWaypoints.push_back(glm::vec3(-18.9589f, 0.0f, 19.9399f));
+    aiWaypoints.push_back(glm::vec3(-18.1971f, 0.0f, 19.9258f));
+    aiWaypoints.push_back(glm::vec3(-16.9434f, 0.0f, 19.7359f));
+
+
     aiCar->MaxSpeed = car->MaxSpeed * 0.95f; // slightly slower than player by default
 
     camera = new Camera(glm::vec3(0.0f, 3.0f, 5.0f));
@@ -783,53 +896,62 @@ int main() {
                 if (!raceCountdownActive && !showGoAnimation) {
                     processCarInput(deltaTime);
 
-                    // 1. Zapamiętujemy pozycję przed aktualizacją фізики
+                    // 1. Zapamiętujemy pozycję przed aktualizacją физики
                     glm::vec3 lastSafePos = car->Position;
 
                     // 2. Wykonujemy ruch (fizyka обчислює новą pozycję na podstawie szybkości)
                     car->Update(deltaTime);
 
                     // Update AI car: simple follow logic
-                    if (aiCar) {
-                        // Compute vector to player
-                        glm::vec3 toPlayer = car->Position - aiCar->Position;
-                        float dist = glm::length(toPlayer);
+                    if (aiCar && !aiWaypoints.empty()) {
 
-                        // Desired yaw towards player
-                        float desiredYaw = glm::degrees(atan2(toPlayer.x, toPlayer.z));
+                        glm::vec3 target = aiWaypoints[aiCurrentWaypoint];
+                        glm::vec3 toTarget = target - aiCar->Position;
+                        float distance = glm::length(toTarget);
+
+                        // === ZMIANA WAYPOINTA ===
+                        if (distance < aiWaypointRadius) {
+                            aiCurrentWaypoint++;
+                            if (aiCurrentWaypoint >= aiWaypoints.size())
+                                aiCurrentWaypoint = 0;
+                        }
+
+                        // === KIERUNEK ===
+                        float desiredYaw = glm::degrees(atan2(toTarget.x, toTarget.z));
                         float yawDiff = desiredYaw - aiCar->Yaw;
-                        // normalize to [-180,180]
+
                         while (yawDiff > 180.0f) yawDiff -= 360.0f;
                         while (yawDiff < -180.0f) yawDiff += 360.0f;
 
-                        // Steering input mapping (left positive, right negative)
-                        float aiSteer = glm::clamp(yawDiff / 45.0f, -1.0f, 1.0f);
-                        aiCar->SteeringInput = aiSteer;
+                        aiCar->SteeringInput = glm::clamp(yawDiff / 25.0f, -1.0f, 1.0f);
 
-                        // Throttle based on distance and orientation
-                        float forwardDot = glm::dot(glm::normalize(toPlayer + glm::vec3(0.001f)), aiCar->FrontVector);
-                        if (dist > 8.0f) aiCar->ThrottleInput = 1.0f;
-                        else if (dist > 3.0f) aiCar->ThrottleInput = 0.6f;
-                        else if (dist > 1.5f) aiCar->ThrottleInput = 0.2f;
-                        else aiCar->ThrottleInput = 0.0f;
+                        // === GAZ ===
+                        float absYaw = fabs(yawDiff);
+                        if (absYaw > 60.0f)
+                            aiCar->ThrottleInput = 0.4f;
+                        else if (absYaw > 30.0f)
+                            aiCar->ThrottleInput = 0.7f;
+                        else
+                            aiCar->ThrottleInput = 1.0f;
 
-                        // Apply yaw change similar to player steering logic
-                        float aiSpeed = glm::length(aiCar->Velocity);
-                        if (aiSpeed > 0.1f) {
+                        // === OBRÓT ===
+                        float speed = glm::length(aiCar->Velocity);
+                        if (speed > 0.1f) {
                             float turnAmount = aiCar->TurnRate * deltaTime * 50.0f;
-                            aiCar->Yaw += turnAmount * aiSteer;
+                            aiCar->Yaw += turnAmount * aiCar->SteeringInput;
 
-                            aiCar->FrontVector.x = sin(glm::radians(aiCar->Yaw));
-                            aiCar->FrontVector.z = cos(glm::radians(aiCar->Yaw));
-                            aiCar->FrontVector.y = 0.0f;
-                            aiCar->FrontVector = glm::normalize(aiCar->FrontVector);
+                            aiCar->FrontVector = glm::normalize(glm::vec3(
+                                sin(glm::radians(aiCar->Yaw)),
+                                0.0f,
+                                cos(glm::radians(aiCar->Yaw))
+                            ));
                         }
 
                         aiCar->Update(deltaTime);
 
-                        // clamp AI velocity
-                        float aiSpd = glm::length(aiCar->Velocity);
-                        if (aiSpd > aiCar->MaxSpeed)
+                        // === LIMIT PRĘDKOŚCI ===
+                        float aiSpeed = glm::length(aiCar->Velocity);
+                        if (aiSpeed > aiCar->MaxSpeed)
                             aiCar->Velocity = glm::normalize(aiCar->Velocity) * aiCar->MaxSpeed;
                     }
 
@@ -838,53 +960,67 @@ int main() {
                     if (speed > car->MaxSpeed) {
                         car->Velocity = glm::normalize(car->Velocity) * car->MaxSpeed;
                     }
-                    // ===== LAP FINISH CHECK =====
-                    float dist = glm::distance(car->Position, lapStartPosition);
 
-                    if (!leftStartZone && dist > lapFinishRadius * 2.0f)
-                        leftStartZone = true;
+                    // ===============================
+                    // == AI FINISH CHECK ============
+                    // ===============================
+                    float dist = glm::distance(aiCar->Position, lapStartPosition);
+                    if (!aiLeftStartZone && dist > lapFinishRadius * 2.0f) aiLeftStartZone = true;
+
+                    if (aiLeftStartZone && dist < lapFinishRadius && !aiRaceFinished) {
+                        aiCurrentLap++;
+                        if (aiCurrentLap > totalLaps) {
+                            aiRaceFinished = true;
+
+                            if (!raceFinished) {          // jeśli gracz jeszcze nie skończył
+                                aiRaceWon = true;         // AI wygrało
+                                raceWon = false;          // gracz nie wygrał
+                                raceFinished = true;      // zakończ wyścig
+                                raceTimerActive = false;
+                            }
+
+                            aiCar->Velocity = glm::vec3(0.0f); // zatrzymanie AI
+                        }
+                        aiLeftStartZone = false;
+                    }
+
+                    // ===============================
+                    // == PLAYER FINISH CHECK ========
+                    // ===============================
+                    dist = glm::distance(car->Position, lapStartPosition);
+                    if (!leftStartZone && dist > lapFinishRadius * 2.0f) leftStartZone = true;
 
                     if (leftStartZone && dist < lapFinishRadius && raceTimerActive) {
-
                         currentLap++;
 
                         if (currentLap > totalLaps) {
                             raceFinished = true;
-                            raceWon = true;
+
+                            if (!aiRaceFinished) {     // gracz dojechał pierwszy
+                                raceWon = true;
+                                aiRaceWon = false;
+                            }
+                            else {                   // AI już skończyło wcześniej
+                                raceWon = false;
+                                aiRaceWon = true;
+                            }
+
                             raceTimerActive = false;
                             car->Velocity = glm::vec3(0.0f);
                         }
 
-                        leftStartZone = false; // щоб не зараховувалось кілька разів
+                        leftStartZone = false;
                     }
 
-                    // AI finish check (simplified)
-                    dist = glm::distance(aiCar->Position, lapStartPosition);
-                    if (!aiLeftStartZone && dist > lapFinishRadius * 2.0f)
-                        aiLeftStartZone = true;
-
-                    if (aiLeftStartZone && dist < lapFinishRadius && !aiRaceFinished) {
-                        aiCurrentLap++;
-
-                        if (aiCurrentLap > totalLaps) {
-                            aiRaceFinished = true;
-                            aiRaceWon = true;
-                            // You can add here a logic to slow down the AI or make it stop
-                            aiCar->Velocity = glm::vec3(0.0f);
-                        }
-
-                        aiLeftStartZone = false;
-                    }
-
-
-
-                    // 3. Sprawdzamy kolizję
+                    // ===============================
+                    // == KOLIZJA ====================
+                    // ===============================
                     if (selectedTrack == 2) {
-                        TrackCollision track; // Tworzymy instancję klasy
+                        TrackCollision track;
 
                         if (track.CheckCollision(car->Position, 0.35f)) {
                             car->Position = lastSafePos;
-                            car->Velocity *= -0.25f; // lekkie odbicie
+                            car->Velocity *= -0.25f;
                         }
                     }
 
@@ -895,18 +1031,22 @@ int main() {
                         std::cout << "AKTUALNA POZYCJA: X: " << car->Position.x << " Z: " << car->Position.z << std::endl;
                         logTimer = 0.0f;
                     }
-                } else {
+
+                }
+                else {
+
                     // countdown active -> reduce timer
                     if (raceCountdownActive) {
                         raceCountdown -= deltaTime;
                         if (raceCountdown <= 0.0f) {
                             raceCountdownActive = false;
-                            // start GO! animation and keep player blocked until it finishes
+
                             showGoAnimation = true;
                             goTimer = goDuration;
+
                             if (car) {
                                 car->Velocity = glm::vec3(0.0f);
-                                car->Handbrake = true; // keep handbrake until GO! ends
+                                car->Handbrake = true;
                             }
                         }
                     }
@@ -916,12 +1056,12 @@ int main() {
                         goTimer -= deltaTime;
                         if (goTimer <= 0.0f) {
                             showGoAnimation = false;
-                            // release handbrake so player can drive
                             if (car) car->Handbrake = false;
                             raceTimerActive = true;
                         }
                     }
                 }
+
             }
 
 
