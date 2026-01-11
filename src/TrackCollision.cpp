@@ -7,7 +7,7 @@
 #include <limits>
 
 // -----------------------------
-// Surowe punkty (przykład: wklejone przez Ciebie dane)
+// Lewa strona
 // Uwaga: nazwy pól Point::x = X (map X), Point::y = Z (map Z)
 // -----------------------------
 const std::vector<Point> TrackCollision::leftSideRaw = {
@@ -188,7 +188,7 @@ const std::vector<Point> TrackCollision::leftSideRaw = {
     {-18.6596f, 18.821f}
 };
 
-// Prawa strona drogi (mogę dodać w kolejnym kroku)
+// Prawa strona drogi 
 const std::vector<Point> TrackCollision::rightSideRaw = {
 {-19.563, 20.7479},
 { -19.2772, 20.7266 },
@@ -407,9 +407,7 @@ const std::vector<Point> TrackCollision::rightSideRaw = {
 // wynikowe ściany
 std::vector<WallSegment> TrackCollision::walls;
 
-// -----------------------------
-// pomocnicze funkcje przetwarzania polilinii
-// -----------------------------
+// -------------------------------
 static void RemoveClosePoints(std::vector<glm::vec2>& pts, float minDist = 1e-4f) {
     if (pts.empty()) return;
     std::vector<glm::vec2> out;
@@ -484,23 +482,21 @@ static void BuildWallsFromSides(const std::vector<Point>& leftRaw, const std::ve
     for (const auto& p : rightRaw) right.emplace_back(p.x, p.y);
 
     // usuń bardzo bliskie punkty
-    RemoveClosePoints(left, 1e-5f);
-    RemoveClosePoints(right, 1e-5f);
+    RemoveClosePoints(left,1e-5f);
+    RemoveClosePoints(right,1e-5f);
 
     // wygładź (opcjonalne)
-    SmoothPolyline(left, 1);
-    SmoothPolyline(right, 1);
+    SmoothPolyline(left,1);
+    SmoothPolyline(right,1);
 
-
-
-    // uprość poliliny RDP (dostosuj eps jeśli trzeba)
+    // uprość poliliny RDP
     std::vector<glm::vec2> leftS, rightS;
-    RDP(left, 0.02f, leftS);
-    RDP(right, 0.02f, rightS);
+    RDP(left,0.02f, leftS);
+    RDP(right,0.02f, rightS);
 
-    // funkcja licząca minimalną odległość środka segmentu do przeciwnej poliliny
+    // pomocnicze funkcje
     auto avgDistToOther = [&](const glm::vec2& a, const glm::vec2& b, const std::vector<glm::vec2>& other) {
-        glm::vec2 mid = (a + b) * 0.5f;
+        glm::vec2 mid = (a + b) *0.5f;
         float minD = std::numeric_limits<float>::max();
         for (const auto& p : other) {
             float d = glm::distance(mid, p);
@@ -509,35 +505,63 @@ static void BuildWallsFromSides(const std::vector<Point>& leftRaw, const std::ve
         return minD;
     };
 
-    const float MIN_TRACK_WIDTH = minTrackWidth;   // np. 2.0f
-    const float MAX_TRACK_WIDTH = 100.0f;
+    auto nearestPointInPolyline = [&](const glm::vec2& mid, const std::vector<glm::vec2>& other) {
+        glm::vec2 best(0.0f);
+        if (other.empty()) return best;
+        float minD2 = std::numeric_limits<float>::max();
+        for (const auto& p : other) {
+            float d2 = glm::distance2(mid, p);
+            if (d2 < minD2) { minD2 = d2; best = p; }
+        }
+        return best;
+    };
 
-    // dodajemy segmenty lewej tylko jeśli są "na zewnątrz" jezdni
-    for (size_t i = 0; i + 1 < leftS.size(); ++i) {
+    const float MIN_TRACK_WIDTH = minTrackWidth;
+    const float MAX_TRACK_WIDTH =100.0f;
+
+    // ile przesuwamy lewą polilinię na zewnątrz (w lewo)
+    // zmniejszamy o0.05, aby przesunąć w prawo
+    const float LEFT_SHIFT =0.30f;
+
+    // lewe segmenty: przesuwamy w prawo o HALF_CAR
+    for (size_t i =0; i +1 < leftS.size(); ++i) {
         glm::vec2 a = leftS[i];
-        glm::vec2 b = leftS[i + 1];
+        glm::vec2 b = leftS[i +1];
         float d = avgDistToOther(a, b, rightS);
-        // jeśli odległość do przeciwnej strony jest wystarczająca, traktujemy segment jako bandę
-        if (d > (MIN_TRACK_WIDTH * 0.5f) && d < MAX_TRACK_WIDTH) {
+        if (d > (MIN_TRACK_WIDTH *0.5f) && d < MAX_TRACK_WIDTH) {
+            glm::vec2 mid = (a + b) *0.5f;
+            glm::vec2 nearest = nearestPointInPolyline(mid, rightS);
+            glm::vec2 toOther = nearest - mid;
+            glm::vec2 ab = b - a;
+            float len = glm::length(ab);
+            if (len >1e-6f) {
+                glm::vec2 perp(-ab.y / len, ab.x / len); // normal CCW
+                float side = glm::dot(perp, toOther) >=0.0f ?1.0f : -1.0f;
+                // kierunek perp*side wskazuje w stronę przeciwnej polilinii;
+                // aby przesunąć lewą polilinię na zewnątrz (w lewo), używamy odwrotnego znaku
+                glm::vec2 shift = perp * (-side * LEFT_SHIFT);
+                a += shift;
+                b += shift;
+            }
             outWalls.push_back({ a, b });
         }
     }
 
-    // analogicznie dla prawej
-    for (size_t i = 0; i + 1 < rightS.size(); ++i) {
+    // prawe segmenty: bez przesunięcia
+    for (size_t i =0; i +1 < rightS.size(); ++i) {
         glm::vec2 a = rightS[i];
-        glm::vec2 b = rightS[i + 1];
+        glm::vec2 b = rightS[i +1];
         float d = avgDistToOther(a, b, leftS);
-        if (d > (MIN_TRACK_WIDTH * 0.5f) && d < MAX_TRACK_WIDTH) {
+        if (d > (MIN_TRACK_WIDTH *0.5f) && d < MAX_TRACK_WIDTH) {
             outWalls.push_back({ a, b });
         }
     }
 
-    // opcjonalnie: posortuj/usuń krótkie segmenty (stabilność)
+    // usuń krótkie segmenty
     std::vector<WallSegment> filtered;
     filtered.reserve(outWalls.size());
     for (auto &s : outWalls) {
-        if (glm::distance(s.start, s.end) > 1e-4f) filtered.push_back(s);
+        if (glm::distance(s.start, s.end) >1e-4f) filtered.push_back(s);
     }
     outWalls.swap(filtered);
 }
