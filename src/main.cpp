@@ -459,7 +459,7 @@ void RenderSettingsMenu() {
     ImGui::Separator();
     ImGui::Spacing();
 
-    ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.6f, 1.0f), "Physics Tuning");
+    ImGui::TextColored(ImVec4(0.9f,0.9f,0.6f,1.0f), "Physics Tuning");
     if (car) {
         ImGui::SliderFloat("Grip", &car->Grip, 0.0f, 1.5f);
         ImGui::SliderFloat("Aerodynamic Drag", &car->AerodynamicDrag, 0.0f, 0.2f);
@@ -847,257 +847,257 @@ int main() {
     city->loadModel();
 
     kartingMap = new Model("assets/karting/gp.obj");
-    TrackCollision::Init(2.0f);;
+        TrackCollision::Init(2.0f);;
 
-    while (!glfwWindowShouldClose(window)) {
+        while (!glfwWindowShouldClose(window)) {
 
-        float currentFrame = glfwGetTime();
+            float currentFrame = glfwGetTime();
 
-        float deltaTime = currentFrame - lastFrame;
+            float deltaTime = currentFrame - lastFrame;
 
-        lastFrame = currentFrame;
+            lastFrame = currentFrame;
 
 
 
-        if (currentState == SPLASH_SCREEN) {
+            if (currentState == SPLASH_SCREEN) {
 
-            splashTimer += deltaTime;
+                splashTimer += deltaTime;
 
-            if (splashTimer > 2.5f) currentState = MAIN_MENU;
+                if (splashTimer > 2.5f) currentState = MAIN_MENU;
 
-        }
-
-        else if (currentState == MAIN_MENU) {
-
-            carMenuRotation += 90.0f * deltaTime;
-
-            if (carMenuRotation > 360.0f) carMenuRotation -= 360.0f;
-
-            backgroundYaw += 3.0f * deltaTime;
-
-            if (backgroundYaw > 360.0f) backgroundYaw -= 360.0f;
-
-        }
-
-        // ... wewnątrz pętli while ...
-        else if (currentState == RACING) {
-            // ===== RACE TIMER UPDATE =====
-            if (raceTimerActive && !raceFinished) {
-                raceTimeLeft -= deltaTime;
-                if (raceTimeLeft <= 0.0f) {
-                    raceTimeLeft = 0.0f;
-                    raceFinished = true;
-                    raceWon = false;
-                    raceTimerActive = false;
-                }
             }
 
-            // Only process input and physics if countdown and GO animation are not active
-            if (!raceCountdownActive && !showGoAnimation) {
-                processCarInput(deltaTime);
+            else if (currentState == MAIN_MENU) {
 
-                // 1. Zapamiętujemy pozycję przed aktualizacją физики
-                glm::vec3 lastSafePos = car->Position;
+                carMenuRotation += 90.0f * deltaTime;
 
-                // 2. Wykonujemy ruch (fizyka обчислює новą pozycję na podstawie szybkości)
-                car->Update(deltaTime);
+                if (carMenuRotation > 360.0f) carMenuRotation -= 360.0f;
 
-                // Update AI car: simple follow logic
-                if (aiCar && !aiWaypoints.empty()) {
+                backgroundYaw += 3.0f * deltaTime;
 
-                    glm::vec3 target = aiWaypoints[aiCurrentWaypoint];
-                    glm::vec3 toTarget = target - aiCar->Position;
-                    float distance = glm::length(toTarget);
+                if (backgroundYaw > 360.0f) backgroundYaw -= 360.0f;
 
-                    // === ZMIANA WAYPOINTA ===
-                    if (distance < aiWaypointRadius) {
-                        aiCurrentWaypoint++;
-                        if (aiCurrentWaypoint >= aiWaypoints.size())
-                            aiCurrentWaypoint = 0;
-                    }
+            }
 
-                    // === KIERUNEK ===
-                    float desiredYaw = glm::degrees(atan2(toTarget.x, toTarget.z));
-                    float yawDiff = desiredYaw - aiCar->Yaw;
-
-                    while (yawDiff > 180.0f) yawDiff -= 360.0f;
-                    while (yawDiff < -180.0f) yawDiff += 360.0f;
-
-                    aiCar->SteeringInput = glm::clamp(yawDiff / 25.0f, -1.0f, 1.0f);
-
-                    // === GAZ ===
-                    float absYaw = fabs(yawDiff);
-                    if (absYaw > 60.0f)
-                        aiCar->ThrottleInput = 0.4f;
-                    else if (absYaw > 30.0f)
-                        aiCar->ThrottleInput = 0.7f;
-                    else
-                        aiCar->ThrottleInput = 1.0f;
-
-                    // === OBRÓT ===
-                    float speed = glm::length(aiCar->Velocity);
-                    if (speed > 0.1f) {
-                        float turnAmount = aiCar->TurnRate * deltaTime * 50.0f;
-                        aiCar->Yaw += turnAmount * aiCar->SteeringInput;
-
-                        aiCar->FrontVector = glm::normalize(glm::vec3(
-                            sin(glm::radians(aiCar->Yaw)),
-                            0.0f,
-                            cos(glm::radians(aiCar->Yaw))
-                        ));
-                    }
-
-                    aiCar->Update(deltaTime);
-
-                    // === LIMIT PRĘDKOŚCI ===
-                    float aiSpeed = glm::length(aiCar->Velocity);
-                    if (aiSpeed > aiCar->MaxSpeed)
-                        aiCar->Velocity = glm::normalize(aiCar->Velocity) * aiCar->MaxSpeed;
-                }
-
-                // clamp velocity to MaxSpeed after Update
-                float speed = glm::length(car->Velocity);
-                if (speed > car->MaxSpeed) {
-                    car->Velocity = glm::normalize(car->Velocity) * car->MaxSpeed;
-                }
-
-                // ===============================
-                // == AI FINISH CHECK ============
-                // ===============================
-                float dist = glm::distance(aiCar->Position, lapStartPosition);
-                if (!aiLeftStartZone && dist > lapFinishRadius * 2.0f) aiLeftStartZone = true;
-
-                if (aiLeftStartZone && dist < lapFinishRadius && !aiRaceFinished) {
-                    aiCurrentLap++;
-                    if (aiCurrentLap > totalLaps) {
-                        aiRaceFinished = true;
-
-                        if (!raceFinished) {          // jeśli gracz jeszcze nie skończył
-                            aiRaceWon = true;         // AI wygrało
-                            raceWon = false;          // gracz nie wygrał
-                            raceFinished = true;      // zakończ wyścig
-                            raceTimerActive = false;
-                        }
-
-                        aiCar->Velocity = glm::vec3(0.0f); // zatrzymanie AI
-                    }
-                    aiLeftStartZone = false;
-                }
-
-                // ===============================
-                // == PLAYER FINISH CHECK ========
-                // ===============================
-                dist = glm::distance(car->Position, lapStartPosition);
-                if (!leftStartZone && dist > lapFinishRadius * 2.0f) leftStartZone = true;
-
-                if (leftStartZone && dist < lapFinishRadius && raceTimerActive) {
-                    currentLap++;
-
-                    if (currentLap > totalLaps) {
+            // ... wewnątrz pętli while ...
+            else if (currentState == RACING) {
+                // ===== RACE TIMER UPDATE =====
+                if (raceTimerActive && !raceFinished) {
+                    raceTimeLeft -= deltaTime;
+                    if (raceTimeLeft <= 0.0f) {
+                        raceTimeLeft = 0.0f;
                         raceFinished = true;
-
-                        if (!aiRaceFinished) {     // gracz dojechał pierwszy
-                            raceWon = true;
-                            aiRaceWon = false;
-                        }
-                        else {                   // AI już skończyło wcześniej
-                            raceWon = false;
-                            aiRaceWon = true;
-                        }
-
+                        raceWon = false;
                         raceTimerActive = false;
-                        car->Velocity = glm::vec3(0.0f);
-                    }
-
-                    leftStartZone = false;
-                }
-
-                // ===============================
-                // == KOLIZJA ====================
-                // ===============================
-                if (selectedTrack == 2) {
-                    TrackCollision track;
-
-                    if (track.CheckCollision(car->Position, 0.35f)) {
-                        car->Position = lastSafePos;
-                        car->Velocity *= -0.25f;
                     }
                 }
 
-                // Logowanie (klawisz P)
-                static float logTimer = 0.0f;
-                logTimer += deltaTime;
-                if (keys[GLFW_KEY_P] && logTimer > 0.2f) {
-                    std::cout << "AKTUALNA POZYCJA: X: " << car->Position.x << " Z: " << car->Position.z << std::endl;
-                    logTimer = 0.0f;
-                }
+                // Only process input and physics if countdown and GO animation are not active
+                if (!raceCountdownActive && !showGoAnimation) {
+                    processCarInput(deltaTime);
 
-            }
-            else {
+                    // 1. Zapamiętujemy pozycję przed aktualizacją физики
+                    glm::vec3 lastSafePos = car->Position;
 
-                // countdown active -> reduce timer
-                if (raceCountdownActive) {
-                    raceCountdown -= deltaTime;
-                    if (raceCountdown <= 0.0f) {
-                        raceCountdownActive = false;
+                    // 2. Wykonujemy ruch (fizyka обчислює новą pozycję na podstawie szybkości)
+                    car->Update(deltaTime);
 
-                        showGoAnimation = true;
-                        goTimer = goDuration;
+                    // Update AI car: simple follow logic
+                    if (aiCar && !aiWaypoints.empty()) {
 
-                        if (car) {
+                        glm::vec3 target = aiWaypoints[aiCurrentWaypoint];
+                        glm::vec3 toTarget = target - aiCar->Position;
+                        float distance = glm::length(toTarget);
+
+                        // === ZMIANA WAYPOINTA ===
+                        if (distance < aiWaypointRadius) {
+                            aiCurrentWaypoint++;
+                            if (aiCurrentWaypoint >= aiWaypoints.size())
+                                aiCurrentWaypoint = 0;
+                        }
+
+                        // === KIERUNEK ===
+                        float desiredYaw = glm::degrees(atan2(toTarget.x, toTarget.z));
+                        float yawDiff = desiredYaw - aiCar->Yaw;
+
+                        while (yawDiff > 180.0f) yawDiff -= 360.0f;
+                        while (yawDiff < -180.0f) yawDiff += 360.0f;
+
+                        aiCar->SteeringInput = glm::clamp(yawDiff / 25.0f, -1.0f, 1.0f);
+
+                        // === GAZ ===
+                        float absYaw = fabs(yawDiff);
+                        if (absYaw > 60.0f)
+                            aiCar->ThrottleInput = 0.4f;
+                        else if (absYaw > 30.0f)
+                            aiCar->ThrottleInput = 0.7f;
+                        else
+                            aiCar->ThrottleInput = 1.0f;
+
+                        // === OBRÓT ===
+                        float speed = glm::length(aiCar->Velocity);
+                        if (speed > 0.1f) {
+                            float turnAmount = aiCar->TurnRate * deltaTime * 50.0f;
+                            aiCar->Yaw += turnAmount * aiCar->SteeringInput;
+
+                            aiCar->FrontVector = glm::normalize(glm::vec3(
+                                sin(glm::radians(aiCar->Yaw)),
+                                0.0f,
+                                cos(glm::radians(aiCar->Yaw))
+                            ));
+                        }
+
+                        aiCar->Update(deltaTime);
+
+                        // === LIMIT PRĘDKOŚCI ===
+                        float aiSpeed = glm::length(aiCar->Velocity);
+                        if (aiSpeed > aiCar->MaxSpeed)
+                            aiCar->Velocity = glm::normalize(aiCar->Velocity) * aiCar->MaxSpeed;
+                    }
+
+                    // clamp velocity to MaxSpeed after Update
+                    float speed = glm::length(car->Velocity);
+                    if (speed > car->MaxSpeed) {
+                        car->Velocity = glm::normalize(car->Velocity) * car->MaxSpeed;
+                    }
+
+                    // ===============================
+                    // == AI FINISH CHECK ============
+                    // ===============================
+                    float dist = glm::distance(aiCar->Position, lapStartPosition);
+                    if (!aiLeftStartZone && dist > lapFinishRadius * 2.0f) aiLeftStartZone = true;
+
+                    if (aiLeftStartZone && dist < lapFinishRadius && !aiRaceFinished) {
+                        aiCurrentLap++;
+                        if (aiCurrentLap > totalLaps) {
+                            aiRaceFinished = true;
+
+                            if (!raceFinished) {          // jeśli gracz jeszcze nie skończył
+                                aiRaceWon = true;         // AI wygrało
+                                raceWon = false;          // gracz nie wygrał
+                                raceFinished = true;      // zakończ wyścig
+                                raceTimerActive = false;
+                            }
+
+                            aiCar->Velocity = glm::vec3(0.0f); // zatrzymanie AI
+                        }
+                        aiLeftStartZone = false;
+                    }
+
+                    // ===============================
+                    // == PLAYER FINISH CHECK ========
+                    // ===============================
+                    dist = glm::distance(car->Position, lapStartPosition);
+                    if (!leftStartZone && dist > lapFinishRadius * 2.0f) leftStartZone = true;
+
+                    if (leftStartZone && dist < lapFinishRadius && raceTimerActive) {
+                        currentLap++;
+
+                        if (currentLap > totalLaps) {
+                            raceFinished = true;
+
+                            if (!aiRaceFinished) {     // gracz dojechał pierwszy
+                                raceWon = true;
+                                aiRaceWon = false;
+                            }
+                            else {                   // AI już skończyło wcześniej
+                                raceWon = false;
+                                aiRaceWon = true;
+                            }
+
+                            raceTimerActive = false;
                             car->Velocity = glm::vec3(0.0f);
-                            car->Handbrake = true;
+                        }
+
+                        leftStartZone = false;
+                    }
+
+                    // ===============================
+                    // == KOLIZJA ====================
+                    // ===============================
+                    if (selectedTrack == 2) {
+                        TrackCollision track;
+
+                        if (track.CheckCollision(car->Position, 0.35f)) {
+                            car->Position = lastSafePos;
+                            car->Velocity *= -0.25f;
+                        }
+                    }
+
+                    // Logowanie (klawisz P)
+                    static float logTimer = 0.0f;
+                    logTimer += deltaTime;
+                    if (keys[GLFW_KEY_P] && logTimer > 0.2f) {
+                        std::cout << "AKTUALNA POZYCJA: X: " << car->Position.x << " Z: " << car->Position.z << std::endl;
+                        logTimer = 0.0f;
+                    }
+
+                }
+                else {
+
+                    // countdown active -> reduce timer
+                    if (raceCountdownActive) {
+                        raceCountdown -= deltaTime;
+                        if (raceCountdown <= 0.0f) {
+                            raceCountdownActive = false;
+
+                            showGoAnimation = true;
+                            goTimer = goDuration;
+
+                            if (car) {
+                                car->Velocity = glm::vec3(0.0f);
+                                car->Handbrake = true;
+                            }
+                        }
+                    }
+
+                    // GO! animation timing
+                    if (showGoAnimation) {
+                        goTimer -= deltaTime;
+                        if (goTimer <= 0.0f) {
+                            showGoAnimation = false;
+                            if (car) car->Handbrake = false;
+                            raceTimerActive = true;
                         }
                     }
                 }
 
-                // GO! animation timing
-                if (showGoAnimation) {
-                    goTimer -= deltaTime;
-                    if (goTimer <= 0.0f) {
-                        showGoAnimation = false;
-                        if (car) car->Handbrake = false;
-                        raceTimerActive = true;
-                    }
-                }
             }
 
-        }
 
+            if (camera && car) {
 
-        if (camera && car) {
+                if (currentState == RACING) {
 
-            if (currentState == RACING) {
+                    if (cockpitView) {
 
-                if (cockpitView) {
+                        glm::vec3 cockpitOffset(0.0f, 0.7f, 0.2f);
 
-                    glm::vec3 cockpitOffset(0.0f, 0.7f, 0.2f);
+                        camera->Position = car->Position
 
-                    camera->Position = car->Position
+                            + car->FrontVector * cockpitOffset.z
 
-                        + car->FrontVector * cockpitOffset.z
+                            + glm::vec3(0.0f, cockpitOffset.y, 0.0f);
 
-                        + glm::vec3(0.0f, cockpitOffset.y, 0.0f);
+                        camera->Front = glm::normalize(car->FrontVector);
 
-                    camera->Front = glm::normalize(car->FrontVector);
+                    }
+
+                    else {
+
+                        camera->FollowCar(car->Position, car->FrontVector);
+
+                    }
 
                 }
 
                 else {
 
-                    camera->FollowCar(car->Position, car->FrontVector);
+                    camera->Position = glm::vec3(0.0f, 2.5f, 5.0f);
 
                 }
 
             }
-
-            else {
-
-                camera->Position = glm::vec3(0.0f, 2.5f, 5.0f);
-
-            }
-
-        }
 
 
         glBindFramebuffer(GL_FRAMEBUFFER, FBO_Scene);
@@ -1131,10 +1131,10 @@ int main() {
             city->Draw(carTrackShader);
         }
         else if (selectedTrack == 2 && kartingMap) {
-
+            
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-            model = glm::scale(model, glm::vec3(0.1f));
+            model = glm::scale(model, glm::vec3(0.1f)); 
 
             carTrackShader.setMat4("model", model);
 
@@ -1225,7 +1225,7 @@ int main() {
 
                 // small HUD below
                 ImGui::SetNextWindowPos(ImVec2(10, current_height - 60));
-
+                
             }
             else if (showGoAnimation) {
                 // GO! animated pop + fade
@@ -1267,7 +1267,7 @@ int main() {
 
                 // small HUD below
                 ImGui::SetNextWindowPos(ImVec2(10, current_height - 60));
-
+                
             }
 
             // Normal in-race UI when not counting down/animating
