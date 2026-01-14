@@ -13,6 +13,14 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <windows.h>
 
+// Undefine Windows macros that may conflict with std::min/std::max
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
+
 #include "Shader.h"
 #include "Camera.h"
 #include "RaceCar.h"
@@ -702,6 +710,68 @@ void RenderMainMenu() {
     ImGui::End();
 }
 
+// Mini-map drawing helper
+static void DrawMiniMap(ImDrawList* draw, const ImVec2& topLeft, const ImVec2& size, const glm::vec3& playerPos, const glm::vec3& aiPos) {
+    using namespace glm;
+    const auto& walls = TrackCollision::GetWalls();
+    if (walls.empty()) return;
+
+    // 1. Obliczanie granic (bez zmian)
+    float minX = FLT_MAX, maxX = -FLT_MAX, minZ = FLT_MAX, maxZ = -FLT_MAX;
+    for (const auto& w : walls) {
+        minX = std::min({ minX, w.start.x, w.end.x });
+        maxX = std::max({ maxX, w.start.x, w.end.x });
+        minZ = std::min({ minZ, w.start.y, w.end.y });
+        maxZ = std::max({ maxZ, w.start.y, w.end.y });
+    }
+    minX = std::min({ minX, playerPos.x, aiPos.x });
+    maxX = std::max({ maxX, playerPos.x, aiPos.x });
+    minZ = std::min({ minZ, playerPos.z, aiPos.z });
+    maxZ = std::max({ maxZ, playerPos.z, aiPos.z });
+
+    float worldW = std::max(0.001f, maxX - minX);
+    float worldH = std::max(0.001f, maxZ - minZ);
+
+    // 2. KLUCZ: Przy obrocie o 90 stopni zamieniamy worldW z worldH przy liczeniu skali!
+    float pad = 0.05f;
+    float scaleX = (size.x * (1.0f - 2.0f * pad)) / worldH; // Tu używamy worldH
+    float scaleY = (size.y * (1.0f - 2.0f * pad)) / worldW; // Tu używamy worldW
+    float scale = std::min(scaleX, scaleY);
+
+    // Centrowanie po obrocie
+    float extraX = (size.x - worldH * scale) * 0.5f;
+    float extraY = (size.y - worldW * scale) * 0.5f;
+
+    // 3. NOWA LAMBDA - Obrót o 90 stopni w prawo
+    auto WorldToScreen = [&](float wx, float wz) -> ImVec2 {
+        // Normalizacja (0.0 do 1.0)
+        float nx = (wx - minX) / worldW;
+        float nz = (wz - minZ) / worldH;
+
+        // OBRÓT: 
+        // Ekranowe X = (1.0 - nz) -> czyli przód (maxZ) będzie po prawej
+        // Ekranowe Y = nx        -> czyli prawo (maxX) będzie na dole
+        float rx = (1.0f - nz) * (worldH * scale) + extraX;
+        float ry = nx * (worldW * scale) + extraY;
+
+        return ImVec2(topLeft.x + rx, topLeft.y + ry);
+        };
+
+    // 4. Rysowanie ścian
+    for (const auto& w : walls) {
+        ImVec2 a = WorldToScreen(w.start.x, w.start.y);
+        ImVec2 b = WorldToScreen(w.end.x, w.end.y);
+        draw->AddLine(a, b, IM_COL32(180, 180, 180, 220), 2.0f);
+    }
+
+    // 5. Rysowanie graczy
+    ImVec2 pPos = WorldToScreen(playerPos.x, playerPos.z);
+    ImVec2 aiP = WorldToScreen(aiPos.x, aiPos.z);
+
+    float markerR = std::max(3.0f, std::min(size.x, size.y) * 0.03f);
+    draw->AddCircleFilled(pPos, markerR, IM_COL32(255, 160, 40, 255));
+    draw->AddCircleFilled(aiP, markerR, IM_COL32(40, 220, 100, 220));
+}
 int main() {
 
     if (!glfwInit()) return -1;
@@ -972,14 +1042,14 @@ int main() {
                         if (aiCurrentLap > totalLaps) {
                             aiRaceFinished = true;
 
-                            if (!raceFinished) {          // jeśli gracz jeszcze nie skończył
-                                aiRaceWon = true;         // AI wygrało
-                                raceWon = false;          // gracz nie wygrał
-                                raceFinished = true;      // zakończ wyścig
+                            if (!raceFinished) {          // якщо гр玩家 ще не скончив
+                                aiRaceWon = true;         // AI виграв
+                                raceWon = false;          // гр玩家 не виграв
+                                raceFinished = true;      // закінчи гонку
                                 raceTimerActive = false;
                             }
 
-                            aiCar->Velocity = glm::vec3(0.0f); // zatrzymanie AI
+                            aiCar->Velocity = glm::vec3(0.0f); // зупинка AI
                         }
                         aiLeftStartZone = false;
                     }
@@ -996,11 +1066,11 @@ int main() {
                         if (currentLap > totalLaps) {
                             raceFinished = true;
 
-                            if (!aiRaceFinished) {     // gracz dojechał pierwszy
+                            if (!aiRaceFinished) {     // гр玩家 доїхав першим
                                 raceWon = true;
                                 aiRaceWon = false;
                             }
-                            else {                   // AI już skończyło wcześniej
+                            else {                   // AI вже скінчив раніше
                                 raceWon = false;
                                 aiRaceWon = true;
                             }
@@ -1272,12 +1342,12 @@ int main() {
 
             // Normal in-race UI when not counting down/animating
             if (!raceCountdownActive && !showGoAnimation) {
-                ImGui::SetNextWindowPos(ImVec2(10, current_height - 60));
-                float panelWidth = 320.0f;
-                float panelHeight = 170.0f;
+                ImGui::SetNextWindowPos(ImVec2(10, current_height -60));
+                float panelWidth =320.0f;
+                float panelHeight =170.0f;
 
                 ImGui::SetNextWindowPos(
-                    ImVec2(current_width - panelWidth - 20.0f, 20.0f),
+                    ImVec2(current_width - panelWidth -20.0f,20.0f),
                     ImGuiCond_Always
                 );
                 ImGui::SetNextWindowSize(ImVec2(panelWidth, panelHeight));
@@ -1297,38 +1367,38 @@ int main() {
                 draw->AddRectFilled(
                     pos,
                     ImVec2(pos.x + size.x, pos.y + size.y),
-                    IM_COL32(10, 10, 10, 200),
-                    18.0f
+                    IM_COL32(10,10,10,200),
+                   18.0f
                 );
 
                 // Neon border
                 draw->AddRect(
                     pos,
                     ImVec2(pos.x + size.x, pos.y + size.y),
-                    IM_COL32(255, 140, 40, 220),
-                    18.0f,
+                    IM_COL32(255,140,40,220),
+                   18.0f,
                     0,
                     2.5f
                 );
 
-                ImGui::Dummy(ImVec2(0, 8));
+                ImGui::Dummy(ImVec2(0,8));
 
                 // ===== SPEED =====
-                float speedKmh = glm::length(car->Velocity) * 3.6f;
+                float speedKmh = glm::length(car->Velocity) *3.6f;
                 ImGui::SetWindowFontScale(2.6f);
-                ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.15f, 1.0f), "%.0f km/h", speedKmh);
+                ImGui::TextColored(ImVec4(1.0f,0.6f,0.15f,1.0f), "%.0f km/h", speedKmh);
 
                 ImGui::SetWindowFontScale(1.0f);
-                ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "SPEED");
+                ImGui::TextColored(ImVec4(0.7f,0.7f,0.7f,1.0f), "SPEED");
 
                 ImGui::Separator();
 
                 // ===== TIME =====
                 ImGui::SetWindowFontScale(1.8f);
                 ImVec4 timeColor =
-                    raceTimeLeft < 10.0f
-                    ? ImVec4(1.0f, 0.2f, 0.2f, 1.0f)
-                    : ImVec4(0.2f, 0.9f, 1.0f, 1.0f);
+                    raceTimeLeft <10.0f
+                    ? ImVec4(1.0f,0.2f,0.2f,1.0f)
+                    : ImVec4(0.2f,0.9f,1.0f,1.0f);
 
                 ImGui::TextColored(timeColor, "TIME: %.1f s", raceTimeLeft);
 
@@ -1339,7 +1409,7 @@ int main() {
                 // ===== LAP =====
                 ImGui::SetWindowFontScale(1.4f);
                 ImGui::TextColored(
-                    ImVec4(0.9f, 0.9f, 0.9f, 1.0f),
+                    ImVec4(0.9f,0.9f,0.9f,1.0f),
                     "LAP %d / %d",
                     std::min(currentLap, totalLaps),
                     totalLaps
@@ -1351,16 +1421,36 @@ int main() {
 
                 // ===== VIEW MODE =====
                 ImGui::TextColored(
-                    ImVec4(0.8f, 0.8f, 0.8f, 1.0f),
+                    ImVec4(0.8f,0.8f,0.8f,1.0f),
                     "CAMERA: %s",
                     cockpitView ? "COCKPIT" : "CHASE"
                 );
 
                 ImGui::End();
 
-                ImGui::SetNextWindowPos(ImVec2(10, 10));
+                // Mini-map window (bottom-right)
+                ImGui::SetNextWindowPos(ImVec2(current_width -220, current_height -220), ImGuiCond_Always);
+                ImGui::SetNextWindowSize(ImVec2(200,200));
+                ImGui::Begin("MiniMap", nullptr,
+                    ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoInputs);
+
+                ImDrawList* mdraw = ImGui::GetWindowDrawList();
+                ImVec2 mpos = ImGui::GetWindowPos();
+                ImVec2 msize = ImGui::GetWindowSize();
+
+                // background and border
+                mdraw->AddRectFilled(mpos, ImVec2(mpos.x + msize.x, mpos.y + msize.y), IM_COL32(8,8,8,200),8.0f);
+                mdraw->AddRect(mpos, ImVec2(mpos.x + msize.x, mpos.y + msize.y), IM_COL32(160,160,160,120),8.0f,0,2.0f);
+
+                // draw the minimap content with small inner padding
+                DrawMiniMap(mdraw, ImVec2(mpos.x +8.0f, mpos.y +8.0f), ImVec2(msize.x -16.0f, msize.y -16.0f), car->Position, aiCar ? aiCar->Position : glm::vec3(0.0f));
+
+                ImGui::End();
+
+                ImGui::SetNextWindowPos(ImVec2(10,10));
                 ImGui::Begin("RaceMenu", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
-                if (ImGui::Button("BACK TO MAIN MENU", ImVec2(200, 40))) {
+                if (ImGui::Button("BACK TO MAIN MENU", ImVec2(200,40))) {
                     currentState = MAIN_MENU;
                     showSettings = false;
                     showCarSelect = false;
