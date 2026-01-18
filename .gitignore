@@ -72,6 +72,4 @@ desktop.ini
 # --- Backup / crash dumps ---
 *.dmp
 *.stackdump
-
-
-
+save.txt

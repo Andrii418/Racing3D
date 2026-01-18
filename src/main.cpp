@@ -4,6 +4,7 @@
 #include <cmath>
 #include <algorithm>
 #include <string>
+#include <vector>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h" 
@@ -12,6 +13,33 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <windows.h>
+
+#include "ProfileManager.h"
+
+struct CarData {
+    std::string id;
+    std::string name;
+    std::string bodyPath;
+    std::string wheelFrontPath;
+    std::string wheelBackPath;
+    int price;
+    float wheelFrontX;
+    float wheelBackX;
+    float wheelZ;
+};
+
+std::vector<CarData> garage = {
+    {"race", "Racer GT", "assets/cars/OBJ format/race.obj", "assets/cars/OBJ format/wheel-racing.obj", "", 0, 0.45f, 0.45f, 0.42f},
+    {"police", "Police Car", "assets/cars/OBJ format/police.obj", "assets/cars/OBJ format/wheel-default.obj", "", 1000, 0.48f, 0.48f, 0.45f},
+    {"ambulance", "Ambulance", "assets/cars/OBJ format/ambulance.obj", "assets/cars/OBJ format/wheel-default.obj", "", 1200, 0.52f, 0.52f, 0.70f},
+    {"taxi", "Taxi", "assets/cars/OBJ format/taxi.obj", "assets/cars/OBJ format/wheel-default.obj", "", 800, 0.48f, 0.48f, 0.45f},
+    {"van", "Cargo Van", "assets/cars/OBJ format/van.obj", "assets/cars/OBJ format/wheel-truck.obj", "", 900, 0.55f, 0.55f, 0.85f},
+    {"truck", "Heavy Truck", "assets/cars/OBJ format/truck.obj", "assets/cars/OBJ format/wheel-truck.obj", "", 1500, 0.60f, 0.60f, 0.90f},
+    {"hatchback", "Sport Hatch", "assets/cars/OBJ format/hatchback-sports.obj", "assets/cars/OBJ format/wheel-racing.obj", "", 500, 0.45f, 0.45f, 0.38f},
+    {"tractor", "Tractor 500", "assets/cars/OBJ format/tractor.obj", "assets/cars/OBJ format/wheel-tractor-front.obj", "assets/cars/OBJ format/wheel-tractor-back.obj", 2000, 0.55f, 0.75f, 0.55f}
+};
+
+ProfileManager playerProfile;
 
 // Undefine Windows macros that may conflict with std::min/std::max
 #ifdef min
@@ -57,7 +85,6 @@ enum GameState {
 
 RaceCar* car = nullptr;
 RaceCar* aiCar = nullptr; // AI companion car
-#include <vector>
 
 std::vector<glm::vec3> aiWaypoints;
 int aiCurrentWaypoint = 0;
@@ -131,7 +158,7 @@ unsigned int loadTexture(const char* path) {
     int width, height, nrComponents;
     unsigned char* data = stbi_load(path, &width, &height, &nrComponents, 0);
     if (data) {
-        GLenum format;
+        GLenum format = GL_RGB; // Встановлюємо значення за замовчуванням
         if (nrComponents == 1) format = GL_RED;
         else if (nrComponents == 3) format = GL_RGB;
         else if (nrComponents == 4) format = GL_RGBA;
@@ -152,7 +179,6 @@ unsigned int loadTexture(const char* path) {
         stbi_image_free(data);
         return 0;
     }
-
     return textureID;
 }
 
@@ -332,60 +358,112 @@ void RenderSplashScreen() {
     ImGui::End();
 }
 
+//void RenderCarSelectMenu() {
+//    ImGui::SetNextWindowPos(ImVec2(current_width * 0.5f, current_height * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+//    ImGui::SetNextWindowSize(ImVec2(500, 450));
+//    ImGui::Begin("Car Select Menu", &showCarSelect,
+//        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
+//
+//    ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetWindowPos(),
+//        ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y + ImGui::GetWindowSize().y),
+//        IM_COL32(0, 0, 0, 220));
+//    ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetWindowPos(),
+//        ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y + 10),
+//        IM_COL32(25, 127, 255, 255));
+//
+//    ImGui::Dummy(ImVec2(0, 10));
+//    ImGui::TextColored(ImVec4(0.1f, 0.5f, 1.0f, 1.0f), "  [ GARAGE ]");
+//    ImGui::Separator();
+//    ImGui::Spacing();
+//    ImGui::Dummy(ImVec2(400, 120));
+//    ImGui::Spacing();
+//
+//    const char* carNames[] = { "Model 3D Racer (Default)", "Off-Road Truck (Locked)" };
+//    ImGui::Text("Currently Selected: %s", carNames[selectedCar]);
+//    ImGui::Spacing();
+//
+//    ImGui::Columns(2, "CarList", false);
+//    ImGui::SetColumnWidth(0, 250);
+//    if (ImGui::Selectable(carNames[0], selectedCar == 0, ImGuiSelectableFlags_AllowDoubleClick, ImVec2(0, 40))) {
+//        selectedCar = 0;
+//    }
+//    ImGui::NextColumn();
+//    ImGui::Text("Top Speed: 200 km/h\nAcceleration: High");
+//    ImGui::Columns(1);
+//    ImGui::Separator();
+//
+//    ImGui::Columns(2, "CarList2", false);
+//    ImGui::SetColumnWidth(0, 250);
+//    if (ImGui::Selectable(carNames[1], selectedCar == 1, ImGuiSelectableFlags_Disabled | ImGuiSelectableFlags_AllowDoubleClick, ImVec2(0, 40))) {
+//    }
+//    ImGui::NextColumn();
+//    ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "LOCKED\nRequires Level 5");
+//    ImGui::Columns(1);
+//    ImGui::Separator();
+//
+//    ImGui::Spacing();
+//    float col[3] = { carCustomColor.r, carCustomColor.g, carCustomColor.b };
+//    ImGui::Text("Car Color:");
+//    if (ImGui::ColorEdit3("##CarColorPicker", col)) {
+//        carCustomColor = glm::vec3(col[0], col[1], col[2]);
+//    }
+//    ImGui::Spacing();
+//    ImGui::Separator();
+//    if (ImGui::Button("BACK", ImVec2(200, 35))) {
+//        showCarSelect = false;
+//    }
+//    ImGui::End();
+//}
+
 void RenderCarSelectMenu() {
     ImGui::SetNextWindowPos(ImVec2(current_width * 0.5f, current_height * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSize(ImVec2(500, 450));
-    ImGui::Begin("Car Select Menu", &showCarSelect,
-        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
+    ImGui::SetNextWindowSize(ImVec2(600, 500));
+    ImGui::Begin("Garage", &showCarSelect, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
 
-    ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetWindowPos(),
-        ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y + ImGui::GetWindowSize().y),
-        IM_COL32(0, 0, 0, 220));
-    ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetWindowPos(),
-        ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y + 10),
-        IM_COL32(25, 127, 255, 255));
-
-    ImGui::Dummy(ImVec2(0, 10));
-    ImGui::TextColored(ImVec4(0.1f, 0.5f, 1.0f, 1.0f), "  [ GARAGE ]");
+    ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "WALLET: %d $", playerProfile.balance);
     ImGui::Separator();
     ImGui::Spacing();
-    ImGui::Dummy(ImVec2(400, 120));
-    ImGui::Spacing();
 
-    const char* carNames[] = { "Model 3D Racer (Default)", "Off-Road Truck (Locked)" };
-    ImGui::Text("Currently Selected: %s", carNames[selectedCar]);
-    ImGui::Spacing();
+    if (ImGui::BeginChild("CarList", ImVec2(0, 380), true)) {
+        for (int i = 0; i < garage.size(); i++) {
+            ImGui::PushID(i);
+            bool unlocked = playerProfile.isUnlocked(garage[i].id);
+            bool isCurrent = (playerProfile.currentCarId == garage[i].id);
 
-    ImGui::Columns(2, "CarList", false);
-    ImGui::SetColumnWidth(0, 250);
-    if (ImGui::Selectable(carNames[0], selectedCar == 0, ImGuiSelectableFlags_AllowDoubleClick, ImVec2(0, 40))) {
-        selectedCar = 0;
-    }
-    ImGui::NextColumn();
-    ImGui::Text("Top Speed: 200 km/h\nAcceleration: High");
-    ImGui::Columns(1);
-    ImGui::Separator();
+            ImGui::BeginGroup();
+            ImGui::Text("%s", garage[i].name.c_str());
 
-    ImGui::Columns(2, "CarList2", false);
-    ImGui::SetColumnWidth(0, 250);
-    if (ImGui::Selectable(carNames[1], selectedCar == 1, ImGuiSelectableFlags_Disabled | ImGuiSelectableFlags_AllowDoubleClick, ImVec2(0, 40))) {
+            if (unlocked) {
+                if (isCurrent) {
+                    ImGui::TextColored(ImVec4(0, 1, 0, 1), "SELECTED");
+                }
+                else {
+                    if (ImGui::Button("USE", ImVec2(100, 30))) {
+                        playerProfile.currentCarId = garage[i].id;
+                        car->WheelFrontX = garage[i].wheelFrontX;
+                        car->WheelBackX = garage[i].wheelBackX;
+                        car->WheelZ = garage[i].wheelZ;
+                        car->loadAssets(garage[i].bodyPath, garage[i].wheelFrontPath, garage[i].wheelBackPath);
+                        playerProfile.save();
+                    }
+                }
+            }
+            else {
+                std::string btnText = "BUY (" + std::to_string(garage[i].price) + "$)";
+                if (ImGui::Button(btnText.c_str(), ImVec2(100, 30))) {
+                    if (playerProfile.buyCar(garage[i].id, garage[i].price)) {
+                        // успішно куплено
+                    }
+                }
+            }
+            ImGui::EndGroup();
+            ImGui::Separator();
+            ImGui::PopID();
+        }
+        ImGui::EndChild();
     }
-    ImGui::NextColumn();
-    ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "LOCKED\nRequires Level 5");
-    ImGui::Columns(1);
-    ImGui::Separator();
 
-    ImGui::Spacing();
-    float col[3] = { carCustomColor.r, carCustomColor.g, carCustomColor.b };
-    ImGui::Text("Car Color:");
-    if (ImGui::ColorEdit3("##CarColorPicker", col)) {
-        carCustomColor = glm::vec3(col[0], col[1], col[2]);
-    }
-    ImGui::Spacing();
-    ImGui::Separator();
-    if (ImGui::Button("BACK", ImVec2(200, 35))) {
-        showCarSelect = false;
-    }
+    if (ImGui::Button("BACK TO MENU", ImVec2(-1, 40))) showCarSelect = false;
     ImGui::End();
 }
 
@@ -820,12 +898,47 @@ int main() {
     stbi_set_flip_vertically_on_load(false);
     splashTextureID = loadTexture("assets/Tlo.png");
 
+    /*car = new RaceCar(glm::vec3(0.0f, 0.1f, 0.0f));
+    car->loadAssets();*/
+    playerProfile.load(); // Завантажуємо баланс та збережену машину
+
     car = new RaceCar(glm::vec3(0.0f, 0.1f, 0.0f));
-    car->loadAssets();
+
+    // Знаходимо в гаражі збережену машину і завантажуємо її
+    //bool loaded = false;
+    //for (auto& c : garage) {
+    //    if (c.id == playerProfile.currentCarId) {
+    //        car->loadAssets(c.bodyPath, c.wheelPath);
+    //        loaded = true;
+    //        break;
+    //    }
+    //}
+    //if (!loaded) car->loadAssets(garage[0].bodyPath, garage[0].wheelPath); // default
+    // Знаходимо в гаражі збережену машину і завантажуємо її
+    // БЕЗПЕЧНЕ завантаження збереженої машини при старті
+    bool loaded = false;
+    for (const auto& c : garage) {
+        if (c.id == playerProfile.currentCarId) {
+            car->WheelFrontX = c.wheelFrontX;
+            car->WheelBackX = c.wheelBackX;
+            car->WheelZ = c.wheelZ;
+            if (car->loadAssets(c.bodyPath, c.wheelFrontPath, c.wheelBackPath)) loaded = true;
+            break;
+        }
+    }
+
+    if (!loaded && !garage.empty()) {
+        car->WheelFrontX = garage[0].wheelFrontX;
+        car->WheelBackX = garage[0].wheelBackX;
+        car->WheelZ = garage[0].wheelZ;
+        car->loadAssets(garage[0].bodyPath, garage[0].wheelFrontPath, garage[0].wheelBackPath);
+    }
 
     // create AI companion car positioned slightly behind/to the left
     aiCar = new RaceCar(car->Position + glm::vec3(-3.0f, 0.0f, -3.0f));
-    aiCar->loadAssets();
+    //aiCar->loadAssets();
+    // Даємо AI стандартну модель гоночного авто
+    aiCar->loadAssets("assets/cars/OBJ format/race.obj", "assets/cars/OBJ format/wheel-racing.obj");
 
     aiWaypoints.clear();
 
@@ -965,6 +1078,14 @@ int main() {
                 // Only process input and physics if countdown and GO animation are not active
                 if (!raceCountdownActive && !showGoAnimation) {
                     processCarInput(deltaTime);
+                    //if (keys[GLFW_KEY_R]) car->Yaw += 200.0f * deltaTime;
+
+                    /*if (keys[GLFW_KEY_R]) {
+                        car->Draw(carTrackShader, car->Position, car->Yaw + 90.0f);
+                    }
+                    else {
+                        car->Draw(carTrackShader);
+                    }*/
 
                     // 1. Zapamiętujemy pozycję przed aktualizacją физики
                     glm::vec3 lastSafePos = car->Position;
@@ -1069,6 +1190,7 @@ int main() {
                             if (!aiRaceFinished) {     // гр玩家 доїхав першим
                                 raceWon = true;
                                 aiRaceWon = false;
+                                playerProfile.addMoney(300);
                             }
                             else {                   // AI вже скінчив раніше
                                 raceWon = false;
