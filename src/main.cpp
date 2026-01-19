@@ -1775,7 +1775,7 @@ int main() {
                 ImGui::TextColored(
                     ImVec4(0.9f, 0.9f, 0.9f, 1.0f),
                     "LAP %d / %d",
-                    std::min(currentLap, totalLaps),
+                    currentLap - 1,
                     totalLaps
                 );
                 ImGui::SetWindowFontScale(1.0f);

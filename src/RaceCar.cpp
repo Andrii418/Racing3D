@@ -47,60 +47,84 @@ bool RaceCar::loadAssets(const std::string& bodyPath, const std::string& wheelFr
 
 void RaceCar::Update(float deltaTime) {
     PreviousPosition = Position;
+
+    // 1. Update Direction Vectors
     FrontVector.x = sin(glm::radians(Yaw));
     FrontVector.z = cos(glm::radians(Yaw));
     FrontVector.y = 0.0f;
     FrontVector = glm::normalize(FrontVector);
 
+    // 2. Smooth Throttle Input
     float tResponse = glm::clamp(ThrottleResponse * deltaTime, 0.0f, 1.0f);
     Throttle = glm::mix(Throttle, ThrottleInput, tResponse);
 
     glm::vec3 forward = FrontVector;
-    float speed = glm::length(Velocity);
-    glm::vec3 velLong = forward * glm::dot(Velocity, forward);
+
+    // 3. Separate Velocity into Forward and Lateral components
+    float forwardSpeed = glm::dot(Velocity, forward);
+    glm::vec3 velLong = forward * forwardSpeed;
     glm::vec3 velLat = Velocity - velLong;
 
-    float effectiveGrip = Grip;
-    float forwardSpeed = glm::dot(Velocity, forward);
+    // 4. Apply Engine Force
+    if (Throttle > 0.01f && !Handbrake) {
+        forwardSpeed += (Throttle * Acceleration) * deltaTime;
+    }
+    else if (Throttle < -0.01f) {
+        forwardSpeed -= (-Throttle * Braking) * deltaTime;
+    }
 
-    if (Throttle > 0.01f && !Handbrake) forwardSpeed += (Throttle * Acceleration) * deltaTime;
-    else if (Throttle < -0.01f) forwardSpeed -= (-Throttle * Braking) * deltaTime;
-
-    forwardSpeed = glm::clamp(forwardSpeed, -MaxSpeed * 0.5f, MaxSpeed);
+    // 5. Engine Speed Limiter (Prevent engine from pushing past MaxSpeed)
+    forwardSpeed = glm::clamp(forwardSpeed, -MaxSpeed, MaxSpeed);
     velLong = forward * forwardSpeed;
 
+    // 6. Handbrake & Drifting physics
+    float effectiveGrip = Grip;
     if (Handbrake) {
-        float newForwardSpeed = forwardSpeed * powf(HandbrakeDeceleration, deltaTime);
-        if (newForwardSpeed < 0.0f) newForwardSpeed = 0.0f;
-        velLong = forward * newForwardSpeed;
+        forwardSpeed *= powf(HandbrakeDeceleration, deltaTime * 60.0f);
+        velLong = forward * forwardSpeed;
         effectiveGrip *= (1.0f - HandbrakeGripReduction);
+
         glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
-        velLat += right * (-SteeringInput) * 0.25f * (glm::clamp(newForwardSpeed, 0.0f, MaxSpeed) / (MaxSpeed + 0.1f));
+        float slideForce = (-SteeringInput) * 0.5f * (glm::clamp(std::abs(forwardSpeed), 0.0f, MaxSpeed) / MaxSpeed);
+        velLat += right * slideForce * 10.0f * deltaTime;
     }
 
+    // 7. Combine & Apply Drag
     Velocity = velLong + velLat;
-    speed = glm::length(Velocity);
+    float currentSpeed = glm::length(Velocity);
 
-    if (speed > 0.001f) Velocity += (-glm::normalize(Velocity) * (AerodynamicDrag * speed * speed)) * deltaTime;
+    // Aerodynamic Drag (Quadratic)
+    if (currentSpeed > 0.001f) {
+        Velocity += (-glm::normalize(Velocity) * (AerodynamicDrag * currentSpeed * currentSpeed)) * deltaTime;
+    }
+    // Rolling Resistance (Linear)
     Velocity -= Velocity * RollingResistance * deltaTime;
 
+    // 8. Lateral Grip (prevent sliding unless handbrake is used)
     velLong = forward * glm::dot(Velocity, forward);
     velLat = Velocity - velLong;
-    velLat *= (1.0f - glm::clamp(effectiveGrip * deltaTime, 0.0f, 0.95f));
+    velLat *= (1.0f - glm::clamp(effectiveGrip * deltaTime * 2.0f, 0.0f, 1.0f));
     Velocity = velLong + velLat;
 
-    Position += Velocity * deltaTime;
-
-    speed = glm::length(Velocity);
-    if (speed > 0.5f && !Handbrake) {
-        float alignFactor = SteeringResponsiveness * deltaTime * glm::clamp(Grip * (1.0f - speed / (MaxSpeed + 0.001f)), 0.0f, 1.0f);
-        glm::vec3 velDir = (speed > 0.001f) ? glm::normalize(Velocity) : forward;
-        Velocity = glm::normalize(glm::mix(velDir, forward, alignFactor)) * speed * 0.99f;
+    // 9. Steering Alignment
+    currentSpeed = glm::length(Velocity);
+    if (currentSpeed > 0.5f && !Handbrake) {
+        float alignFactor = SteeringResponsiveness * deltaTime * glm::clamp(Grip * (1.0f - currentSpeed / (MaxSpeed + 0.1f)), 0.0f, 1.0f);
+        glm::vec3 velDir = glm::normalize(Velocity);
+        Velocity = glm::normalize(glm::mix(velDir, forward, alignFactor)) * currentSpeed * 0.99f;
     }
 
-    Velocity *= 0.98f;
+    // 10. *** STRICT 18 KM/H (5 M/S) LIMIT *** 
+    if (glm::length(Velocity) > MaxSpeed) {
+        Velocity = glm::normalize(Velocity) * MaxSpeed;
+    }
+
+    // 11. Integration
+    Position += Velocity * deltaTime;
     Position.y = 0.0f;
     HandleCollision();
+
+    // Rotate wheels based on true forward speed
     WheelRotation += glm::dot(Velocity, forward) * deltaTime * 10.0f;
 }
 
@@ -111,12 +135,6 @@ glm::mat4 RaceCar::GetModelMatrix() const {
     m = glm::rotate(m, glm::radians(Yaw), glm::vec3(0, 1, 0));
     return glm::scale(m, glm::vec3(0.15f));
 }
-//glm::mat4 RaceCar::GetModelMatrix() const {
-//    glm::mat4 m = glm::translate(glm::mat4(1.0f), Position);
-//    // Додайте + 90.0f прямо сюди
-//    m = glm::rotate(m, glm::radians(Yaw + 90.0f), glm::vec3(0, 1, 0));
-//    return glm::scale(m, glm::vec3(0.15f));
-//}
 
 void RaceCar::Draw(const Shader& shader, glm::vec3 pos, float yaw) const {
     glm::mat4 m = (glm::length(pos) > 0.001f) ? glm::scale(glm::rotate(glm::translate(glm::mat4(1.0f), pos), glm::radians(yaw), glm::vec3(0, 1, 0)), glm::vec3(0.15f)) : GetModelMatrix();
@@ -177,11 +195,11 @@ bool RaceCar::loadObj(const std::string& path, CarMesh& mesh, bool isBody) {
 }
 
 unsigned int RaceCar::loadTexture(const char* path) {
-    unsigned int id; glGenTextures(1, &id); int w, h, nrComponents; // Змінено n на nrComponents
+    unsigned int id; glGenTextures(1, &id); int w, h, nrComponents;
     stbi_set_flip_vertically_on_load(true);
     unsigned char* data = stbi_load(path, &w, &h, &nrComponents, 0);
     if (data) {
-        GLenum format = (nrComponents == 4) ? GL_RGBA : GL_RGB; // Тепер назва однакова
+        GLenum format = (nrComponents == 4) ? GL_RGBA : GL_RGB;
         glBindTexture(GL_TEXTURE_2D, id);
         glTexImage2D(GL_TEXTURE_2D, 0, format, w, h, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D); stbi_image_free(data);

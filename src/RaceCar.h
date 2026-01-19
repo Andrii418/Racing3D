@@ -23,16 +23,18 @@ public:
     glm::vec3 FrontVector;
     float Yaw;
 
-    // Точна фізика з GitHub
-    float MaxSpeed = 18.0f;
-    float Acceleration = 18.0f;
-    float Braking = 8.0f;
-    float TurnRate = 2.0f;
+    // PHYSICS TUNING (Target: 18 km/h = 5.0 m/s)
+    float MaxSpeed = 5.0f;           // 5 m/s * 3.6 = 18 km/h
+    float Acceleration = 8.0f;       // Snappy acceleration
+    float Braking = 10.0f;           // Strong brakes
+    float TurnRate = 2.5f;           // Slightly sharper turning
     float WheelRotation = 0.0f;
-    float Grip = 0.8f;
-    float AerodynamicDrag = 0.008f;
-    float RollingResistance = 0.003f;
-    float SteeringResponsiveness = 1.5f;
+
+    // Resistance Tuning
+    float Grip = 1.5f;               // High grip for tight controls
+    float AerodynamicDrag = 0.02f;   // Low drag
+    float RollingResistance = 0.5f;  // Moderate coasting friction
+    float SteeringResponsiveness = 2.0f;
 
     bool Handbrake = false;
     float HandbrakeGripReduction = 0.6f;
@@ -41,9 +43,9 @@ public:
     float SteeringInput = 0.0f;
     float ThrottleInput = 0.0f;
     float Throttle = 0.0f;
-    float ThrottleResponse = 3.5f;
+    float ThrottleResponse = 5.0f;   // Faster throttle input reaction
 
-    // Візуальні налаштування коліс
+    // Visual settings
     float WheelFrontX = 0.45f;
     float WheelBackX = 0.45f;
     float WheelZ = 0.42f;
