@@ -93,6 +93,11 @@ unsigned int quadVAO, quadVBO;
 unsigned int grassTextureID = 0;
 unsigned int splashTextureID = 0;
 
+// SKYBOX VARIABLES
+unsigned int skyboxVAO, skyboxVBO;
+unsigned int skyboxTexture;
+unsigned int skyboxShaderID;
+
 enum GameState {
     SPLASH_SCREEN,
     MAIN_MENU,
@@ -173,6 +178,129 @@ float goTimer = 0.0f;
 const float goDuration = 0.8f;
 
 void setupFramebuffer(int width, int height);
+
+// SKYBOX DATA AND FUNCTIONS
+float skyboxVertices[] = {
+    // positions          
+    -1.0f,  1.0f, -1.0f,
+    -1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+    -1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+     1.0f, -1.0f,  1.0f
+};
+
+unsigned int loadCubemap(std::vector<std::string> faces)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    int width, height, nrChannels;
+    for (unsigned int i = 0; i < faces.size(); i++)
+    {
+        unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
+            );
+            stbi_image_free(data);
+        }
+        else
+        {
+            std::cout << "Cubemap tex failed to load at path: " << faces[i] << std::endl;
+            stbi_image_free(data);
+        }
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return textureID;
+}
+
+unsigned int createSkyboxShaderProgram() {
+    const char* vertexShaderSource = R"(
+        #version 330 core
+        layout (location = 0) in vec3 aPos;
+        out vec3 TexCoords;
+        uniform mat4 projection;
+        uniform mat4 view;
+        void main()
+        {
+            TexCoords = aPos;
+            vec4 pos = projection * view * vec4(aPos, 1.0);
+            gl_Position = pos.xyww;
+        }
+    )";
+
+    const char* fragmentShaderSource = R"(
+        #version 330 core
+        out vec4 FragColor;
+        in vec3 TexCoords;
+        uniform samplerCube skybox;
+        void main()
+        {    
+            FragColor = texture(skybox, TexCoords);
+        }
+    )";
+
+    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glCompileShader(vertexShader);
+
+    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glCompileShader(fragmentShader);
+
+    unsigned int shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    return shaderProgram;
+}
 
 unsigned int loadTexture(const char* path) {
     unsigned int textureID;
@@ -867,6 +995,28 @@ int main() {
     setupFramebuffer(current_width, current_height);
 
     stbi_set_flip_vertically_on_load(false);
+
+    // === SKYBOX INIT ===
+    glGenVertexArrays(1, &skyboxVAO);
+    glGenBuffers(1, &skyboxVBO);
+    glBindVertexArray(skyboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+    std::vector<std::string> faces = {
+        "assets/skybox/Maskonaive2/posx.jpg",
+        "assets/skybox/Maskonaive2/negx.jpg",
+        "assets/skybox/Maskonaive2/posy.jpg",
+        "assets/skybox/Maskonaive2/negy.jpg",
+        "assets/skybox/Maskonaive2/posz.jpg",
+        "assets/skybox/Maskonaive2/negz.jpg"
+    };
+    skyboxTexture = loadCubemap(faces);
+    skyboxShaderID = createSkyboxShaderProgram();
+    // ==================
+
     splashTextureID = loadTexture("assets/Tlo.png");
 
     /*car = new RaceCar(glm::vec3(0.0f, 0.1f, 0.0f));
@@ -1305,7 +1455,8 @@ int main() {
         carTrackShader.use();
         if (camera) {
             carTrackShader.setMat4("view", camera->GetViewMatrix());
-            carTrackShader.setMat4("projection", camera->GetProjectionMatrix((float)current_width / (float)current_height));
+            glm::mat4 projection = camera->GetProjectionMatrix((float)current_width / (float)current_height);
+            carTrackShader.setMat4("projection", projection);
         }
         glm::vec3 lightPos(5.0f, 10.0f, 5.0f);
         carTrackShader.setVec3("lightPos", lightPos);
@@ -1354,6 +1505,26 @@ int main() {
             // restore objectColor for further draws
             carTrackShader.setVec3("objectColor", carCustomColor);
         }
+
+        // === SKYBOX RENDER ===
+        if (camera) {
+            glDepthFunc(GL_LEQUAL);
+            glUseProgram(skyboxShaderID);
+
+            glm::mat4 view = glm::mat4(glm::mat3(camera->GetViewMatrix())); // remove translation
+            glm::mat4 projection = camera->GetProjectionMatrix((float)current_width / (float)current_height);
+
+            glUniformMatrix4fv(glGetUniformLocation(skyboxShaderID, "view"), 1, GL_FALSE, glm::value_ptr(view));
+            glUniformMatrix4fv(glGetUniformLocation(skyboxShaderID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+            glBindVertexArray(skyboxVAO);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glBindVertexArray(0);
+            glDepthFunc(GL_LESS);
+        }
+        // =====================
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDisable(GL_DEPTH_TEST);
@@ -1735,6 +1906,12 @@ int main() {
     ImGui::DestroyContext();
 
     if (splashTextureID != 0) glDeleteTextures(1, &splashTextureID);
+    // SKYBOX CLEANUP
+    glDeleteVertexArrays(1, &skyboxVAO);
+    glDeleteBuffers(1, &skyboxVBO);
+    glDeleteTextures(1, &skyboxTexture);
+    glDeleteProgram(skyboxShaderID);
+    // ==============
     glDeleteFramebuffers(1, &FBO_Scene);
     glDeleteVertexArrays(1, &quadVAO);
     glDeleteBuffers(1, &quadVBO);
