@@ -111,6 +111,12 @@ glm::mat4 RaceCar::GetModelMatrix() const {
     m = glm::rotate(m, glm::radians(Yaw), glm::vec3(0, 1, 0));
     return glm::scale(m, glm::vec3(0.15f));
 }
+//glm::mat4 RaceCar::GetModelMatrix() const {
+//    glm::mat4 m = glm::translate(glm::mat4(1.0f), Position);
+//    // Додайте + 90.0f прямо сюди
+//    m = glm::rotate(m, glm::radians(Yaw + 90.0f), glm::vec3(0, 1, 0));
+//    return glm::scale(m, glm::vec3(0.15f));
+//}
 
 void RaceCar::Draw(const Shader& shader, glm::vec3 pos, float yaw) const {
     glm::mat4 m = (glm::length(pos) > 0.001f) ? glm::scale(glm::rotate(glm::translate(glm::mat4(1.0f), pos), glm::radians(yaw), glm::vec3(0, 1, 0)), glm::vec3(0.15f)) : GetModelMatrix();
@@ -118,7 +124,7 @@ void RaceCar::Draw(const Shader& shader, glm::vec3 pos, float yaw) const {
     shader.setBool("useTexture", true); shader.setMat4("model", m);
     glBindVertexArray(bodyMesh.VAO); glDrawElements(GL_TRIANGLES, (GLsizei)bodyMesh.indices.size(), GL_UNSIGNED_INT, 0);
 
-    glm::vec3 wOffs[] = { {WheelFrontX, 0.15f, WheelZ}, {-WheelFrontX, 0.15f, WheelZ}, {WheelBackX, 0.15f, -WheelZ}, {-WheelBackX, 0.15f, -WheelZ} };
+    glm::vec3 wOffs[] = { {WheelFrontX, 0.25f, WheelZ}, {-WheelFrontX, 0.25f, WheelZ}, {WheelBackX, 0.25f, -WheelZ}, {-WheelBackX, 0.25f, -WheelZ} };
 
     for (int i = 0; i < 4; i++) {
         const CarMesh& currentWheel = (i < 2) ? wheelFrontMesh : wheelBackMesh;

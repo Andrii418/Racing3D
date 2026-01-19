@@ -28,15 +28,31 @@ struct CarData {
     float wheelZ;
 };
 
+// Оновлений каталог з налаштуваннями осей згідно з твоїми запитами
 std::vector<CarData> garage = {
-    {"race", "Racer GT", "assets/cars/OBJ format/race.obj", "assets/cars/OBJ format/wheel-racing.obj", "", 0, 0.45f, 0.45f, 0.42f},
-    {"police", "Police Car", "assets/cars/OBJ format/police.obj", "assets/cars/OBJ format/wheel-default.obj", "", 1000, 0.48f, 0.48f, 0.45f},
-    {"ambulance", "Ambulance", "assets/cars/OBJ format/ambulance.obj", "assets/cars/OBJ format/wheel-default.obj", "", 1200, 0.52f, 0.52f, 0.70f},
-    {"taxi", "Taxi", "assets/cars/OBJ format/taxi.obj", "assets/cars/OBJ format/wheel-default.obj", "", 800, 0.48f, 0.48f, 0.45f},
-    {"van", "Cargo Van", "assets/cars/OBJ format/van.obj", "assets/cars/OBJ format/wheel-truck.obj", "", 900, 0.55f, 0.55f, 0.85f},
-    {"truck", "Heavy Truck", "assets/cars/OBJ format/truck.obj", "assets/cars/OBJ format/wheel-truck.obj", "", 1500, 0.60f, 0.60f, 0.90f},
-    {"hatchback", "Sport Hatch", "assets/cars/OBJ format/hatchback-sports.obj", "assets/cars/OBJ format/wheel-racing.obj", "", 500, 0.45f, 0.45f, 0.38f},
-    {"tractor", "Tractor 500", "assets/cars/OBJ format/tractor.obj", "assets/cars/OBJ format/wheel-tractor-front.obj", "assets/cars/OBJ format/wheel-tractor-back.obj", 2000, 0.55f, 0.75f, 0.55f}
+    // Race: трошечки розширили по довжині (0.42 -> 0.48)
+    {"race", "Racer GT", "assets/cars/OBJ format/race.obj", "assets/cars/OBJ format/wheel-racing.obj", "", 0, 0.45f, 0.45f, 0.48f},
+
+    // Police: значно розширили по довжині (+ ширина колеса) (0.45 -> 0.60)
+    {"police", "Police Car", "assets/cars/OBJ format/police.obj", "assets/cars/OBJ format/wheel-default.obj", "", 1000, 0.48f, 0.48f, 0.83f},
+
+    // Ambulance: розширили по довжині, але менше ніж поліцію (0.70 -> 0.80)
+    {"ambulance", "Ambulance", "assets/cars/OBJ format/ambulance.obj", "assets/cars/OBJ format/wheel-default.obj", "", 1200, 0.52f, 0.52f, 0.95f},
+
+    // Taxi: розширили по довжині так само як амбуланс (+0.10 до бази) (0.45 -> 0.55)
+    {"taxi", "Taxi", "assets/cars/OBJ format/taxi.obj", "assets/cars/OBJ format/wheel-default.obj", "", 800, 0.48f, 0.48f, 0.75f},
+
+    // Cargo Van: капельку звузили по ширині (0.55 -> 0.52)
+    {"van", "Cargo Van", "assets/cars/OBJ format/van.obj", "assets/cars/OBJ format/wheel-truck.obj", "", 900, 0.52f, 0.52f, 0.78f},
+
+    // Heavy Truck: звузили по ширині більше ніж вен (0.60 -> 0.54)
+    {"truck", "Heavy Truck", "assets/cars/OBJ format/truck.obj", "assets/cars/OBJ format/wheel-truck.obj", "", 1500, 0.54f, 0.54f, 0.82f},
+
+    // Sport Hatch: значно розширили по довжині (0.38 -> 0.58)
+    {"hatchback", "Sport Hatch", "assets/cars/OBJ format/hatchback-sports.obj", "assets/cars/OBJ format/wheel-racing.obj", "", 500, 0.45f, 0.45f, 0.82f},
+
+    // Tractor: капельку розширили по довжині (0.55 -> 0.60)
+    {"tractor", "Tractor 500", "assets/cars/OBJ format/tractor.obj", "assets/cars/OBJ format/wheel-tractor-front.obj", "assets/cars/OBJ format/wheel-tractor-back.obj", 2000, 0.55f, 0.75f, 0.60f}
 };
 
 ProfileManager playerProfile;
