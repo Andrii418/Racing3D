@@ -1,4 +1,6 @@
-﻿#include <glad/glad.h>
+﻿#define MINIAUDIO_IMPLEMENTATION
+#include "miniaudio.h"
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <cmath>
@@ -13,6 +15,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <windows.h>
+#pragma comment(lib, "winmm.lib") 
 
 #include "ProfileManager.h"
 
@@ -124,6 +127,11 @@ float splashTimer = 0.0f;
 glm::vec3 carCustomColor = glm::vec3(1.0f, 0.5f, 0.2f);
 
 bool cockpitView = false;
+ma_engine audio_engine;
+ma_sound car_sound;
+bool isAudioInit = false;
+
+float masterVolume = 0.5f;
 
 bool showSettings = false;
 bool showCarSelect = false;
@@ -350,11 +358,19 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         if (currentState == RACING) {
             currentState = MAIN_MENU;
+
+            if (isAudioInit) {
+                ma_sound_set_volume(&car_sound, 0.0f);
+            }
+
             showSettings = false;
             showCarSelect = false;
             showTrackSelect = false;
         }
         else if (currentState == MAIN_MENU) {
+            if (isAudioInit) {
+                ma_sound_set_volume(&car_sound, 0.0f); // Force silence
+            }
             if (showSettings) showSettings = false;
             else if (showCarSelect) showCarSelect = false;
             else if (showTrackSelect) showTrackSelect = false;
@@ -379,10 +395,20 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 
 void processCarInput(float deltaTime) {
-    if (!car || currentState != RACING) return;
+    // 1. Safety check: make sure we are racing and valid car exists
+    if (!car || currentState != RACING) {
+        return;
+    }
 
-    // If countdown or GO animation active, ignore player input until it finishes
-    if (raceCountdownActive || showGoAnimation) return;
+    // 2. If countdown or GO animation active, ignore player input until it finishes
+    if (raceCountdownActive || showGoAnimation) {
+        if (car) {
+            car->ThrottleInput = 0.0f;
+            car->SteeringInput = 0.0f;
+            car->Handbrake = true;
+        }
+        return;
+    }
 
     float currentSpeed = glm::length(car->Velocity);
 
@@ -395,8 +421,13 @@ void processCarInput(float deltaTime) {
         desiredThrottle = 0.0f; // disable throttle when handbrake is held
     }
     else {
-        if (keys[GLFW_KEY_W]) desiredThrottle = 1.0f;
-        else if (keys[GLFW_KEY_S]) desiredThrottle = -1.0f;
+        // MOVEMENT LOGIC
+        if (keys[GLFW_KEY_W]) {
+            desiredThrottle = 1.0f;
+        }
+        else if (keys[GLFW_KEY_S]) {
+            desiredThrottle = -1.0f;
+        }
     }
 
     car->ThrottleInput = desiredThrottle;
@@ -630,10 +661,19 @@ void RenderSettingsMenu() {
     ImGui::Separator();
     ImGui::Spacing();
 
-    static float volume = 0.5f;
-    ImGui::SliderFloat("Volume", &volume, 0.0f, 1.0f);
+    if (ImGui::SliderFloat("Volume", &masterVolume, 0.0f, 1.0f)) {
+        // Apply volume immediately if dragging slider
+        if (isAudioInit) {
+            ma_engine_set_volume(&audio_engine, masterVolume);
+        }
+    }
+
+    // --- V-SYNC LOGIC START ---
     static bool vsync = true;
-    ImGui::Checkbox("V-Sync Enabled", &vsync);
+    if (ImGui::Checkbox("V-Sync Enabled", &vsync)) {
+        glfwSwapInterval(vsync ? 1 : 0); // 1 = ON, 0 = OFF
+    }
+    // --- V-SYNC LOGIC END ---
 
     ImGui::Spacing();
     ImGui::Separator();
@@ -719,7 +759,7 @@ void RenderMainMenu() {
     ImGui::SetNextWindowSize(ImVec2(400, buttonsPanelHeight));
     ImGui::Begin("Main Menu Buttons", nullptr,
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBackground);
+        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
 
     ImVec2 buttonSize(350, 60);
     float buttonX = (ImGui::GetWindowSize().x - buttonSize.x) * 0.5f;
@@ -1022,6 +1062,25 @@ int main() {
     /*car = new RaceCar(glm::vec3(0.0f, 0.1f, 0.0f));
     car->loadAssets();*/
     playerProfile.load(); // Завантажуємо баланс та збережену машину
+    // === MINIAUDIO INIT ===
+    if (ma_engine_init(NULL, &audio_engine) == MA_SUCCESS) {
+        if (ma_sound_init_from_file(&audio_engine, "assets/sound/loop_5.wav", 0, NULL, NULL, &car_sound) == MA_SUCCESS) {
+            ma_sound_set_looping(&car_sound, MA_TRUE);
+
+            // CHANGE: Start the sound but set volume to 0.0f immediately so it's silent at start
+            ma_sound_set_volume(&car_sound, 0.0f);
+            ma_sound_start(&car_sound);
+
+            isAudioInit = true;
+        }
+        else {
+            std::cout << "Failed to load car sound file!" << std::endl;
+        }
+    }
+    else {
+        std::cout << "Failed to init Audio Engine!" << std::endl;
+    }
+    // ======================
 
     car = new RaceCar(glm::vec3(0.0f, 0.1f, 0.0f));
 
@@ -1164,7 +1223,9 @@ int main() {
 
 
         if (currentState == SPLASH_SCREEN) {
-
+            if (isAudioInit) {
+                ma_sound_set_volume(&car_sound, 0.0f);
+            }
             splashTimer += deltaTime;
 
             if (splashTimer > 2.5f) currentState = MAIN_MENU;
@@ -1185,6 +1246,21 @@ int main() {
 
         // ... wewnątrz pętli while ...
         else if (currentState == RACING) {
+
+            if (isAudioInit && car) {
+                float currentSpeed = glm::length(car->Velocity); // Speed in m/s
+
+                // Calculate Pitch:
+                // at 0 speed -> 0.5 pitch (rumble)
+                // at MaxSpeed -> 2.0 pitch (screaming engine)
+                float pitch = 0.5f + (currentSpeed / car->MaxSpeed) * 1.5f;
+
+                ma_sound_set_pitch(&car_sound, pitch);
+
+                // Optional: Mute if in menu or paused, Unmute if racing
+                ma_sound_set_volume(&car_sound, masterVolume);
+            }
+            // ==========================
             // ===== RACE TIMER UPDATE =====
             if (raceTimerActive && !raceFinished) {
                 raceTimeLeft -= deltaTime;
@@ -1414,23 +1490,11 @@ int main() {
             if (currentState == RACING) {
 
                 if (cockpitView) {
-
-                    glm::vec3 cockpitOffset(0.0f, 0.7f, 0.2f);
-
-                    camera->Position = car->Position
-
-                        + car->FrontVector * cockpitOffset.z
-
-                        + glm::vec3(0.0f, cockpitOffset.y, 0.0f);
-
-                    camera->Front = glm::normalize(car->FrontVector);
-
+                    // NEW: Use the improved front camera implementation
+                    camera->SetFrontCamera(car->Position, car->Yaw);
                 }
-
                 else {
-
                     camera->FollowCar(car->Position, car->FrontVector);
-
                 }
 
             }
@@ -1752,6 +1816,10 @@ int main() {
                 ImGui::Begin("RaceMenu", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
                 if (ImGui::Button("BACK TO MAIN MENU", ImVec2(200, 40))) {
                     currentState = MAIN_MENU;
+
+                    if (isAudioInit) {
+                        ma_sound_set_volume(&car_sound, 0.0f);
+                    }
                     showSettings = false;
                     showCarSelect = false;
                     showTrackSelect = false;
@@ -1877,6 +1945,10 @@ int main() {
             if (ImGui::Button("MENU", ImVec2(120, 36))) {
                 currentState = MAIN_MENU;
 
+                if (isAudioInit) {
+                    ma_sound_set_volume(&car_sound, 0.0f);
+                }
+
                 // 🔥 RESET RACE STATE
                 raceFinished = false;
                 raceWon = false;
@@ -1922,6 +1994,11 @@ int main() {
     delete track;
     delete city;
     delete kartingMap;
+
+    if (isAudioInit) {
+        ma_sound_uninit(&car_sound);
+        ma_engine_uninit(&audio_engine);
+    }
 
     glfwTerminate();
     return 0;

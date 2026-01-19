@@ -22,7 +22,11 @@ public:
     glm::mat4 GetViewMatrix() const;
     glm::mat4 GetProjectionMatrix(float aspectRatio) const;
 
+    // Third-person chase camera
     void FollowCar(const glm::vec3& carPosition, const glm::vec3& carFrontVector);
+
+    // New First-person "Hood" camera
+    void SetFrontCamera(const glm::vec3& carPosition, float carYaw);
 
     void LookAt(const glm::vec3& centerPoint, float yawRotation);
 
