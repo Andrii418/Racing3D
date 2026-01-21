@@ -1,0 +1,7 @@
+<map id="src/City.h" name="src/City.h">
+<area shape="rect" id="Node000001" title="Deklaracja klasy City reprezentującej statyczne otoczenie (miasto) wczytywane z pliku OBJ." alt="" coords="71,5,148,32"/>
+<area shape="rect" id="Node000002" href="$_city_8cpp.html" title="Implementacja klasy City (wczytywanie OBJ, przygotowanie siatki, renderowanie)." alt="" coords="5,80,97,107"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="92,44,63,81,59,78,87,45"/>
+<area shape="rect" id="Node000003" href="$main_8cpp.html" title="Główny plik gry: inicjalizacja systemów, pętla gry, renderowanie i UI." alt="" coords="120,80,216,107"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="131,42,161,80,156,79,128,47"/>
+</map>

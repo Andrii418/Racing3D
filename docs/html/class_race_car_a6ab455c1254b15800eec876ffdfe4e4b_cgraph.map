@@ -1,0 +1,5 @@
+<map id="RaceCar::Draw" name="RaceCar::Draw">
+<area shape="rect" id="Node000001" title="Rysuje samochód (karoseria + koła)." alt="" coords="5,5,118,32"/>
+<area shape="rect" id="Node000002" href="$class_race_car.html#a504dba1197c440f74396c8fe49cfa884" title="Zwraca macierz modelu (translacja + rotacja + skala)." alt="" coords="166,5,339,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="118,16,153,18,148,19,118,21"/>
+</map>

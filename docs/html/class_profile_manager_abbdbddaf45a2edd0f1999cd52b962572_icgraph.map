@@ -1,0 +1,5 @@
+<map id="ProfileManager::isUnlocked" name="ProfileManager::isUnlocked">
+<area shape="rect" id="Node000001" title="Sprawdza, czy samochód jest odblokowany." alt="" coords="212,5,393,32"/>
+<area shape="rect" id="Node000002" href="$class_profile_manager.html#a55a9214ff89d68214afe22f3a910c03e" title="Próbuje kupić samochód." alt="" coords="5,5,164,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="194,19,164,21,164,16,199,19"/>
+</map>

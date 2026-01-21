@@ -1,0 +1,5 @@
+<map id="RaceCar::loadAssets" name="RaceCar::loadAssets">
+<area shape="rect" id="Node000001" title="Ładuje zasoby modelu samochodu (karoseria i koła) oraz teksturę." alt="" coords="5,5,152,32"/>
+<area shape="rect" id="Node000002" href="$class_race_car.html#ae96040d8914605d88c53b63655bbe05a" title="Zwalnia zasoby OpenGL i czyści dane siatek." alt="" coords="200,5,326,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="152,16,187,19,181,19,152,21"/>
+</map>

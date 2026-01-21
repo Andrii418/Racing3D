@@ -1,0 +1,9 @@
+<map id="ma_peak_node_config" name="ma_peak_node_config">
+<area shape="rect" id="Node000001" title=" " alt="" coords="112,480,252,549"/>
+<area shape="rect" id="Node000002" href="$structma__node__config.html" title=" " alt="" coords="49,243,174,397"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="125,395,145,455,150,466,145,465,140,457,122,399"/>
+<area shape="rect" id="Node000003" href="$structma__node__vtable.html" title=" " alt="" coords="5,5,217,160"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="112,157,114,226,109,225,111,162"/>
+<area shape="rect" id="Node000004" href="$structma__peak2__config.html" title=" " alt="" coords="198,232,310,408"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="243,406,227,457,221,468,218,464,222,455,239,410"/>
+</map>

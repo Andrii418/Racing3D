@@ -1,0 +1,10 @@
+<map id="ma_resource_manager_data_buffer_node" name="ma_resource_manager_data_buffer_node">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,701,230,872"/>
+<area shape="poly" id="edge4_Node000001_Node000001" title=" " alt="" coords="230,764,250,772,257,786,254,796,247,803,245,798,250,793,252,787,246,776,230,769"/>
+<area shape="rect" id="Node000002" href="$structma__resource__manager__data__supply.html" title=" " alt="" coords="45,331,190,629"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="119,627,120,685,115,684,117,632"/>
+<area shape="rect" id="Node000003" href="$structma__paged__audio__buffer__data.html" title=" " alt="" coords="28,168,208,259"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="118,256,120,314,115,314,118,261"/>
+<area shape="rect" id="Node000004" href="$structma__paged__audio__buffer__page.html" title=" " alt="" coords="26,5,209,96"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="118,93,120,151,115,151,118,98"/>
+</map>

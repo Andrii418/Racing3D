@@ -1,0 +1,9 @@
+<map id="ma_loshelf_node_config" name="ma_loshelf_node_config">
+<area shape="rect" id="Node000001" title=" " alt="" coords="109,480,260,549"/>
+<area shape="rect" id="Node000002" href="$structma__node__config.html" title=" " alt="" coords="49,243,174,397"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="129,395,150,455,155,466,150,465,146,457,126,399"/>
+<area shape="rect" id="Node000003" href="$structma__node__vtable.html" title=" " alt="" coords="5,5,217,160"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="112,157,114,226,109,225,111,162"/>
+<area shape="rect" id="Node000004" href="$structma__loshelf2__config.html" title=" " alt="" coords="198,232,321,408"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="249,406,232,457,226,468,223,464,228,455,245,409"/>
+</map>

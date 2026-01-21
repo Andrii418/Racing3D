@@ -1,0 +1,9 @@
+<map id="ma_biquad_node_config" name="ma_biquad_node_config">
+<area shape="rect" id="Node000001" title=" " alt="" coords="108,523,259,592"/>
+<area shape="rect" id="Node000002" href="$structma__node__config.html" title=" " alt="" coords="49,264,174,419"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="122,416,133,458,146,498,151,509,146,507,142,500,128,460,120,421"/>
+<area shape="rect" id="Node000003" href="$structma__node__vtable.html" title=" " alt="" coords="5,5,217,160"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="112,157,114,248,109,247,111,162"/>
+<area shape="rect" id="Node000004" href="$structma__biquad__config.html" title=" " alt="" coords="198,232,313,451"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="244,449,228,500,223,510,219,507,224,498,240,452"/>
+</map>

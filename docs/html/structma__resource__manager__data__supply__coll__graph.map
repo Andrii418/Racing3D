@@ -1,0 +1,7 @@
+<map id="ma_resource_manager_data_supply" name="ma_resource_manager_data_supply">
+<area shape="rect" id="Node000001" title=" " alt="" coords="24,331,169,629"/>
+<area shape="rect" id="Node000002" href="$structma__paged__audio__buffer__data.html" title=" " alt="" coords="7,168,186,259"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="97,256,99,314,94,314,96,261"/>
+<area shape="rect" id="Node000003" href="$structma__paged__audio__buffer__page.html" title=" " alt="" coords="5,5,188,96"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="97,93,99,151,94,151,96,98"/>
+</map>

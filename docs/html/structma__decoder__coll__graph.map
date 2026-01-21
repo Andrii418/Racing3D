@@ -1,0 +1,35 @@
+<map id="ma_decoder" name="ma_decoder">
+<area shape="rect" id="Node000001" title=" " alt="" coords="242,2224,416,2507"/>
+<area shape="poly" id="edge4_Node000001_Node000001" title=" " alt="" coords="417,2332,436,2344,443,2365,441,2379,433,2390,430,2386,436,2377,438,2366,432,2347,416,2337"/>
+<area shape="rect" id="Node000002" href="$structma__data__source__base.html" title=" " alt="" coords="9,1869,150,2067"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="119,2064,165,2151,234,2249,228,2250,160,2153,118,2069"/>
+<area shape="rect" id="Node000003" href="$structma__data__source__vtable.html" title=" " alt="" coords="5,1451,154,1648"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="80,1645,82,1852,77,1852,79,1650"/>
+<area shape="rect" id="Node000004" href="$structma__decoding__backend__vtable.html" title=" " alt="" coords="174,1883,318,2053"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="250,2050,258,2125,271,2199,273,2208,268,2207,266,2201,253,2125,248,2055"/>
+<area shape="rect" id="Node000005" href="$structma__data__converter.html" title=" " alt="" coords="342,1784,521,2152"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="396,2150,385,2201,382,2209,378,2206,380,2199,393,2154"/>
+<area shape="rect" id="Node000006" href="$structma__channel__converter.html" title=" " alt="" coords="282,1387,424,1712"/>
+<area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="355,1709,364,1760,366,1768,360,1767,359,1760,355,1714"/>
+<area shape="rect" id="Node000007" href="$structma__resampler.html" title=" " alt="" coords="448,1429,586,1669"/>
+<area shape="poly" id="edge7_Node000005_Node000007" title=" " alt="" coords="498,1667,482,1761,481,1768,476,1766,477,1759,496,1672"/>
+<area shape="rect" id="Node000008" href="$structma__resampling__backend__vtable.html" title=" " alt="" coords="326,1021,538,1315"/>
+<area shape="poly" id="edge8_Node000007_Node000008" title=" " alt="" coords="450,1312,462,1362,475,1414,469,1413,456,1363,449,1317"/>
+<area shape="rect" id="Node000009" href="$structma__linear__resampler.html" title=" " alt="" coords="562,1037,693,1299"/>
+<area shape="poly" id="edge9_Node000007_Node000009" title=" " alt="" coords="593,1296,576,1363,561,1414,556,1412,570,1362,591,1301"/>
+<area shape="rect" id="Node000010" href="$structma__linear__resampler__config.html" title=" " alt="" coords="508,755,638,947"/>
+<area shape="poly" id="edge10_Node000009_Node000010" title=" " alt="" coords="590,944,605,1021,600,1020,589,949"/>
+<area shape="rect" id="Node000011" href="$structma__lpf.html" title=" " alt="" coords="662,752,756,949"/>
+<area shape="poly" id="edge11_Node000009_Node000011" title=" " alt="" coords="685,946,668,1022,663,1020,683,951"/>
+<area shape="rect" id="Node000012" href="$structma__lpf1.html" title=" " alt="" coords="630,453,724,587"/>
+<area shape="poly" id="edge12_Node000011_Node000012" title=" " alt="" coords="679,584,687,680,694,736,688,735,682,680,678,589"/>
+<area shape="rect" id="Node000013" href="$unionma__biquad__coefficient.html" title=" " alt="" coords="652,5,792,96"/>
+<area shape="poly" id="edge13_Node000012_Node000013" title=" " alt="" coords="697,99,692,121,677,203,670,288,669,368,672,437,667,436,664,368,665,288,671,203,686,119,698,93"/>
+<area shape="rect" id="Node000015" href="$structma__biquad.html" title=" " alt="" coords="728,296,821,429"/>
+<area shape="poly" id="edge16_Node000015_Node000013" title=" " alt="" coords="730,93,763,280,758,279,729,98"/>
+<area shape="rect" id="Node000014" href="$structma__lpf2.html" title=" " alt="" coords="750,611,807,680"/>
+<area shape="poly" id="edge14_Node000011_Node000014" title=" " alt="" coords="768,677,750,737,745,736,766,682"/>
+<area shape="poly" id="edge15_Node000014_Node000015" title=" " alt="" coords="776,427,780,594,775,593,775,432"/>
+<area shape="rect" id="Node000016" href="$structma__allocation__callbacks.html" title=" " alt="" coords="545,1901,697,2035"/>
+<area shape="poly" id="edge17_Node000001_Node000016" title=" " alt="" coords="597,2033,570,2094,535,2154,485,2217,430,2276,427,2271,481,2214,531,2150,566,2092,594,2037"/>
+</map>

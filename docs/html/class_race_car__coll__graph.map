@@ -1,0 +1,3 @@
+<map id="RaceCar" name="RaceCar">
+<area shape="rect" id="Node000001" title="Klasa reprezentująca samochód wyścigowy w grze (fizyka, logika ruchu, rendering)." alt="" coords="5,5,129,395"/>
+</map>

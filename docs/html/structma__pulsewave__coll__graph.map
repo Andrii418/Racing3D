@@ -1,0 +1,13 @@
+<map id="ma_pulsewave" name="ma_pulsewave">
+<area shape="rect" id="Node000001" title=" " alt="" coords="183,792,280,861"/>
+<area shape="rect" id="Node000002" href="$structma__waveform.html" title=" " alt="" coords="115,587,207,677"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="162,675,169,722,182,767,189,779,183,778,178,769,163,723,160,679"/>
+<area shape="rect" id="Node000003" href="$structma__data__source__base.html" title=" " alt="" coords="9,275,150,472"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="111,469,144,570,139,571,110,474"/>
+<area shape="rect" id="Node000004" href="$structma__data__source__vtable.html" title=" " alt="" coords="5,5,154,203"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="80,200,82,258,77,258,79,205"/>
+<area shape="rect" id="Node000005" href="$structma__waveform__config.html" title=" " alt="" coords="175,285,310,461"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="216,459,183,571,178,570,214,463"/>
+<area shape="rect" id="Node000006" href="$structma__pulsewave__config.html" title=" " alt="" coords="231,544,371,720"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="277,718,261,769,257,779,253,775,256,767,273,721"/>
+</map>

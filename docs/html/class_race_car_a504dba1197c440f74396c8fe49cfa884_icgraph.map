@@ -1,0 +1,5 @@
+<map id="RaceCar::GetModelMatrix" name="RaceCar::GetModelMatrix">
+<area shape="rect" id="Node000001" title="Zwraca macierz modelu (translacja + rotacja + skala)." alt="" coords="166,5,339,32"/>
+<area shape="rect" id="Node000002" href="$class_race_car.html#a6ab455c1254b15800eec876ffdfe4e4b" title="Rysuje samochód (karoseria + koła)." alt="" coords="5,5,118,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="147,19,118,21,118,16,153,18"/>
+</map>

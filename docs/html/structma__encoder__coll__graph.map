@@ -1,0 +1,8 @@
+<map id="ma_encoder" name="ma_encoder">
+<area shape="rect" id="Node000001" title=" " alt="" coords="21,416,143,592"/>
+<area shape="poly" id="edge3_Node000001_Node000001" title=" " alt="" coords="142,479,161,486,167,494,169,504,167,515,160,523,157,519,162,512,164,504,162,496,158,491,143,484"/>
+<area shape="rect" id="Node000002" href="$structma__encoder__config.html" title=" " alt="" coords="20,211,144,344"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="82,341,84,399,79,399,81,346"/>
+<area shape="rect" id="Node000003" href="$structma__allocation__callbacks.html" title=" " alt="" coords="5,5,158,139"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="82,136,84,194,79,193,81,141"/>
+</map>

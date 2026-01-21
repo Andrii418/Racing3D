@@ -1,0 +1,5 @@
+<map id="City::GetModelMatrix" name="City::GetModelMatrix">
+<area shape="rect" id="Node000001" title="Zwraca macierz modelu (translacja &#45;&gt; rotacja &#45;&gt; skala)." alt="" coords="138,5,283,32"/>
+<area shape="rect" id="Node000002" href="$class_city.html#a2e6e2f6aad1b46d5a1bd54f947fc9035" title="Renderuje model miasta." alt="" coords="5,5,90,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="119,19,90,21,90,16,125,18"/>
+</map>

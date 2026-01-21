@@ -1,0 +1,7 @@
+<map id="src/TrackCollision.h" name="src/TrackCollision.h">
+<area shape="rect" id="Node000001" title="Deklaracje struktur i funkcji do kolizji samochodu z „ścianami” toru w płaszczyźnie XZ." alt="" coords="86,5,223,32"/>
+<area shape="rect" id="Node000002" href="$_track_collision_8cpp.html" title="Implementacja budowania ścian toru i testów kolizji okrąg–odcinek w płaszczyźnie XZ." alt="" coords="5,80,157,107"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="133,42,95,82,92,78,128,44"/>
+<area shape="rect" id="Node000003" href="$main_8cpp.html" title="Główny plik gry: inicjalizacja systemów, pętla gry, renderowanie i UI." alt="" coords="181,80,277,107"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="179,40,219,80,213,79,177,45"/>
+</map>

@@ -1,0 +1,21 @@
+<map id="ma_biquad_node" name="ma_biquad_node">
+<area shape="rect" id="Node000001" title=" " alt="" coords="465,1112,574,1181"/>
+<area shape="rect" id="Node000002" href="$structma__node__base.html" title=" " alt="" coords="183,715,399,997"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="400,991,485,1099,480,1099,398,996"/>
+<area shape="rect" id="Node000003" href="$structma__node__graph.html" title=" " alt="" coords="104,1091,335,1203"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="224,995,218,1022,214,1075,209,1073,213,1021,221,1000"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="271,1089,284,1066,297,1016,301,1013,288,1068,275,1093"/>
+<area shape="rect" id="Node000004" href="$structma__stack.html" title=" " alt="" coords="44,800,136,912"/>
+<area shape="poly" id="edge4_Node000003_Node000004" title=" " alt="" coords="83,909,84,948,87,988,95,1028,110,1065,118,1078,113,1078,106,1068,90,1030,81,989,79,948,82,914"/>
+<area shape="rect" id="Node000005" href="$structma__node__vtable.html" title=" " alt="" coords="5,360,217,515"/>
+<area shape="poly" id="edge5_Node000002_Node000005" title=" " alt="" coords="133,512,163,599,199,690,203,699,198,699,194,692,158,601,133,517"/>
+<area shape="rect" id="Node000006" href="$structma__node__input__bus.html" title=" " alt="" coords="389,392,516,483"/>
+<area shape="poly" id="edge6_Node000002_Node000006" title=" " alt="" coords="437,480,354,700,349,698,434,485"/>
+<area shape="rect" id="Node000007" href="$structma__node__output__bus.html" title=" " alt="" coords="204,5,371,288"/>
+<area shape="poly" id="edge8_Node000002_Node000007" title=" " alt="" coords="282,285,282,360,282,535,286,698,281,697,277,535,276,360,281,290"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="368,285,422,377,416,378,368,290"/>
+<area shape="rect" id="Node000008" href="$structma__biquad.html" title=" " alt="" coords="557,789,650,923"/>
+<area shape="poly" id="edge9_Node000001_Node000008" title=" " alt="" coords="587,921,536,1097,532,1094,582,924"/>
+<area shape="rect" id="Node000009" href="$unionma__biquad__coefficient.html" title=" " alt="" coords="540,392,680,483"/>
+<area shape="poly" id="edge10_Node000008_Node000009" title=" " alt="" coords="611,480,607,773,602,771,608,484"/>
+</map>

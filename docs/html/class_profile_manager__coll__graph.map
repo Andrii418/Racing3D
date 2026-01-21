@@ -1,0 +1,3 @@
+<map id="ProfileManager" name="ProfileManager">
+<area shape="rect" id="Node000001" title="Zarządza stanem profilu gracza (saldo, odblokowane auta, aktualny wybór) i zapisuje go do pliku." alt="" coords="5,5,109,203"/>
+</map>

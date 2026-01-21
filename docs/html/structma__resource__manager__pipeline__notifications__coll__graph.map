@@ -1,0 +1,9 @@
+<map id="ma_resource_manager_pipeline_notifications" name="ma_resource_manager_pipeline_notifications">
+<area shape="rect" id="Node000001" title=" " alt="" coords="19,509,162,595"/>
+<area shape="rect" id="Node000002" href="$structma__resource__manager__pipeline__stage__notification.html" title=" " alt="" coords="5,331,176,416"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="92,414,93,493,88,492,89,418"/>
+<area shape="rect" id="Node000003" href="$structma__fence.html" title=" " alt="" coords="57,189,124,259"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="91,256,93,314,88,313,90,261"/>
+<area shape="rect" id="Node000004" href="$structma__event.html" title=" " alt="" coords="57,5,124,117"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="91,115,93,173,88,172,90,120"/>
+</map>

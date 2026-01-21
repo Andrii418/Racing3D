@@ -1,0 +1,7 @@
+<map id="ma_data_converter_config" name="ma_data_converter_config">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,661,230,987"/>
+<area shape="rect" id="Node000002" href="$structma__resampler__config.html" title=" " alt="" coords="49,371,187,589"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="118,587,120,645,115,644,117,592"/>
+<area shape="rect" id="Node000003" href="$structma__resampling__backend__vtable.html" title=" " alt="" coords="12,5,224,299"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="118,296,120,354,115,354,118,301"/>
+</map>

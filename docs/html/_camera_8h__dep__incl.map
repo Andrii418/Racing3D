@@ -1,0 +1,7 @@
+<map id="src/Camera.h" name="src/Camera.h">
+<area shape="rect" id="Node000001" title="Deklaracja klasy Camera odpowiedzialnej za macierze widoku i projekcji oraz tryby kamery." alt="" coords="76,5,177,32"/>
+<area shape="rect" id="Node000002" href="$_camera_8cpp.html" title="Implementacja klasy Camera (obliczanie macierzy oraz trybów kamery)." alt="" coords="5,80,120,107"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="108,43,75,82,72,78,103,45"/>
+<area shape="rect" id="Node000003" href="$main_8cpp.html" title="Główny plik gry: inicjalizacja systemów, pętla gry, renderowanie i UI." alt="" coords="144,80,240,107"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="149,41,183,80,178,79,147,46"/>
+</map>

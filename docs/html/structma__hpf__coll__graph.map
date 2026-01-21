@@ -1,0 +1,12 @@
+<map id="ma_hpf" name="ma_hpf">
+<area shape="rect" id="Node000001" title=" " alt="" coords="13,752,107,949"/>
+<area shape="rect" id="Node000002" href="$structma__hpf1.html" title=" " alt="" coords="5,453,98,587"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="51,584,53,611,53,680,56,736,50,735,48,680,48,611,51,589"/>
+<area shape="rect" id="Node000003" href="$unionma__biquad__coefficient.html" title=" " alt="" coords="23,5,163,96"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="69,98,64,121,50,203,44,288,43,367,47,436,41,436,38,368,38,288,44,203,59,119,70,93"/>
+<area shape="rect" id="Node000005" href="$structma__biquad.html" title=" " alt="" coords="100,296,193,429"/>
+<area shape="poly" id="edge5_Node000005_Node000003" title=" " alt="" coords="101,93,135,279,130,280,101,98"/>
+<area shape="rect" id="Node000004" href="$structma__hpf2.html" title=" " alt="" coords="120,611,181,680"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="137,677,112,738,108,736,135,682"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="148,427,152,594,147,594,147,432"/>
+</map>

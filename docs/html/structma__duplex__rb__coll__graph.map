@@ -1,0 +1,13 @@
+<map id="ma_duplex_rb" name="ma_duplex_rb">
+<area shape="rect" id="Node000001" title=" " alt="" coords="122,728,214,797"/>
+<area shape="rect" id="Node000002" href="$structma__pcm__rb.html" title=" " alt="" coords="121,544,215,656"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="169,654,170,712,165,710,166,658"/>
+<area shape="rect" id="Node000003" href="$structma__data__source__base.html" title=" " alt="" coords="10,275,152,472"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="119,469,143,528,138,528,118,474"/>
+<area shape="rect" id="Node000004" href="$structma__data__source__vtable.html" title=" " alt="" coords="5,5,154,203"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="80,200,83,258,78,258,80,205"/>
+<area shape="rect" id="Node000005" href="$structma__rb.html" title=" " alt="" coords="176,275,332,472"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="218,469,197,529,193,527,216,474"/>
+<area shape="rect" id="Node000006" href="$structma__allocation__callbacks.html" title=" " alt="" coords="178,37,331,171"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="255,168,257,258,252,257,254,173"/>
+</map>

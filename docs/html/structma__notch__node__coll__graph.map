@@ -1,0 +1,23 @@
+<map id="ma_notch_node" name="ma_notch_node">
+<area shape="rect" id="Node000001" title=" " alt="" coords="441,1133,544,1203"/>
+<area shape="rect" id="Node000002" href="$structma__node__base.html" title=" " alt="" coords="193,736,409,1019"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="392,1016,440,1087,462,1120,457,1119,435,1089,390,1021"/>
+<area shape="rect" id="Node000003" href="$structma__node__graph.html" title=" " alt="" coords="101,1112,332,1224"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="222,1016,216,1043,210,1096,205,1094,210,1042,219,1020"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="268,1110,281,1087,297,1037,300,1033,286,1089,272,1114"/>
+<area shape="rect" id="Node000004" href="$structma__stack.html" title=" " alt="" coords="41,821,134,933"/>
+<area shape="poly" id="edge4_Node000003_Node000004" title=" " alt="" coords="80,930,81,969,83,1009,91,1049,106,1087,114,1100,109,1100,102,1089,86,1051,78,1010,75,970,79,936"/>
+<area shape="rect" id="Node000005" href="$structma__node__vtable.html" title=" " alt="" coords="5,488,217,643"/>
+<area shape="poly" id="edge5_Node000002_Node000005" title=" " alt="" coords="155,640,199,711,205,721,200,722,194,713,155,645"/>
+<area shape="rect" id="Node000006" href="$structma__node__input__bus.html" title=" " alt="" coords="389,520,516,611"/>
+<area shape="poly" id="edge6_Node000002_Node000006" title=" " alt="" coords="433,608,379,722,375,719,430,613"/>
+<area shape="rect" id="Node000007" href="$structma__node__output__bus.html" title=" " alt="" coords="254,5,422,288"/>
+<area shape="poly" id="edge8_Node000002_Node000007" title=" " alt="" coords="309,285,294,386,282,488,278,565,282,643,287,719,281,719,276,643,273,565,276,488,289,386,307,290"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="377,285,439,504,433,504,376,290"/>
+<area shape="rect" id="Node000008" href="$structma__notch2.html" title=" " alt="" coords="529,843,603,912"/>
+<area shape="poly" id="edge9_Node000001_Node000008" title=" " alt="" coords="561,910,521,1089,511,1119,507,1115,515,1087,557,913"/>
+<area shape="rect" id="Node000009" href="$structma__biquad.html" title=" " alt="" coords="540,499,632,632"/>
+<area shape="poly" id="edge10_Node000008_Node000009" title=" " alt="" coords="583,630,572,826,567,825,580,634"/>
+<area shape="rect" id="Node000010" href="$unionma__biquad__coefficient.html" title=" " alt="" coords="516,101,656,192"/>
+<area shape="poly" id="edge11_Node000009_Node000010" title=" " alt="" coords="587,189,589,482,583,481,585,194"/>
+</map>

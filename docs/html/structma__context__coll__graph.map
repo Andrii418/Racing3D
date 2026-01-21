@@ -1,0 +1,16 @@
+<map id="ma_context" name="ma_context">
+<area shape="rect" id="Node000001" title=" " alt="" coords="184,779,558,1125"/>
+<area shape="rect" id="Node000002" href="$structma__backend__callbacks.html" title=" " alt="" coords="5,360,200,685"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="200,682,245,753,251,764,246,764,240,756,199,688"/>
+<area shape="rect" id="Node000003" href="$structma__log.html" title=" " alt="" coords="224,477,331,568"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="288,565,332,762,327,762,286,570"/>
+<area shape="rect" id="Node000004" href="$structma__log__callback.html" title=" " alt="" coords="98,101,206,192"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="147,189,149,225,152,262,161,300,177,334,185,342,193,346,204,350,214,358,245,408,265,461,260,461,240,410,210,362,201,355,192,351,182,347,172,338,156,302,147,263,144,225,147,194"/>
+<area shape="rect" id="Node000005" href="$structma__allocation__callbacks.html" title=" " alt="" coords="278,80,431,213"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="370,210,387,312,394,428,395,546,388,762,383,761,390,546,388,428,382,312,369,216"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="303,216,278,261,258,313,251,350,251,389,262,461,257,461,246,389,246,350,253,311,274,259,305,211"/>
+<area shape="rect" id="Node000006" href="$structma__device__info.html" title=" " alt="" coords="556,413,719,632"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="573,630,540,687,490,766,486,762,535,684,569,634"/>
+<area shape="rect" id="Node000007" href="$unionma__device__id.html" title=" " alt="" coords="587,5,688,288"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="639,285,640,397,635,395,636,290"/>
+</map>

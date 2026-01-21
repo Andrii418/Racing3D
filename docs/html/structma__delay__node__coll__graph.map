@@ -1,0 +1,21 @@
+<map id="ma_delay_node" name="ma_delay_node">
+<area shape="rect" id="Node000001" title=" " alt="" coords="459,1048,561,1117"/>
+<area shape="rect" id="Node000002" href="$structma__node__base.html" title=" " alt="" coords="183,651,399,933"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="399,931,477,1035,472,1034,396,936"/>
+<area shape="rect" id="Node000003" href="$structma__node__graph.html" title=" " alt="" coords="104,1027,335,1139"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="224,931,218,958,214,1011,209,1009,213,957,221,936"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="271,1025,284,1002,297,952,301,949,288,1004,275,1029"/>
+<area shape="rect" id="Node000004" href="$structma__stack.html" title=" " alt="" coords="44,736,136,848"/>
+<area shape="poly" id="edge4_Node000003_Node000004" title=" " alt="" coords="83,845,84,884,87,924,95,964,110,1001,118,1014,113,1014,106,1004,90,966,81,925,79,884,82,850"/>
+<area shape="rect" id="Node000005" href="$structma__node__vtable.html" title=" " alt="" coords="5,381,217,536"/>
+<area shape="poly" id="edge5_Node000002_Node000005" title=" " alt="" coords="149,533,199,625,204,636,199,636,194,628,149,539"/>
+<area shape="rect" id="Node000006" href="$structma__node__input__bus.html" title=" " alt="" coords="389,413,516,504"/>
+<area shape="poly" id="edge6_Node000002_Node000006" title=" " alt="" coords="433,502,369,637,365,634,430,506"/>
+<area shape="rect" id="Node000007" href="$structma__node__output__bus.html" title=" " alt="" coords="204,5,371,288"/>
+<area shape="poly" id="edge8_Node000002_Node000007" title=" " alt="" coords="282,285,282,360,282,557,285,634,279,633,276,557,276,360,281,290"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="362,285,424,398,418,399,362,290"/>
+<area shape="rect" id="Node000008" href="$structma__delay.html" title=" " alt="" coords="523,736,660,848"/>
+<area shape="poly" id="edge9_Node000001_Node000008" title=" " alt="" coords="578,846,535,1003,526,1033,523,1030,530,1002,574,849"/>
+<area shape="rect" id="Node000009" href="$structma__delay__config.html" title=" " alt="" coords="540,360,650,557"/>
+<area shape="poly" id="edge10_Node000008_Node000009" title=" " alt="" coords="596,555,595,720,590,718,593,559"/>
+</map>

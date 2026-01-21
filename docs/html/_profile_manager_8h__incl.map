@@ -1,0 +1,13 @@
+<map id="src/ProfileManager.h" name="src/ProfileManager.h">
+<area shape="rect" id="Node000001" title="Prosty menedżer profilu gracza: saldo, odblokowane samochody i zapis/odczyt z pliku." alt="" coords="148,5,289,32"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,80,77,107"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="188,35,87,76,85,71,186,30"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="100,80,166,107"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="206,32,160,72,158,68,201,33"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="190,80,247,107"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="220,31,221,66,216,63,216,34"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="272,80,325,107"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="233,30,276,70,271,69,231,35"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="349,80,389,107"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="245,30,338,76,333,76,244,35"/>
+</map>
