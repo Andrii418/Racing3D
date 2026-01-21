@@ -1,4 +1,4 @@
-#version 330 core
+Ôªø#version 330 core
 out vec4 FragColor;
 
 in vec2 TexCoords;
@@ -6,8 +6,8 @@ in vec2 TexCoords;
 uniform sampler2D screenTexture;
 uniform bool isBlur;
 
-// Wartoúci offsetu dla prostej prÛbki 9x9 (Gaussian Blur approximation)
-const float offset = 1.0 / 300.0; // Ustawione na przyk≥adowπ wartoúÊ
+// Warto—öci offsetu dla prostej pr—Ébki 9x9 (Gaussian Blur approximation)
+const float offset = 1.0 / 300.0; // Ustawione na przyk—ñadow‚Ññ warto—ö–∂
 const float blur_weight[9] = float[](0.0, 0.015, 0.05, 0.2, 0.385, 0.2, 0.05, 0.015, 0.0);
 
 void main()
