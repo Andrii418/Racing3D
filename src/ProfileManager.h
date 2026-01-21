@@ -11,7 +11,6 @@ public:
     std::set<std::string> unlockedCars;
     std::string currentCarId = "race";
 
-    // «бер≥гаЇ стан у файл save.txt у папц≥ з проЇктом
     void save() {
         std::ofstream file("save.txt");
         if (file.is_open()) {
@@ -24,7 +23,6 @@ public:
         }
     }
 
-    // «авантажуЇ дан≥ при старт≥ гри
     void load() {
         std::ifstream file("save.txt");
         if (file.is_open()) {
@@ -38,7 +36,6 @@ public:
             file.close();
         }
         else {
-            // якщо файлу немаЇ (перший запуск), даЇмо стартов≥ ресурси
             balance = 500;
             currentCarId = "race";
             unlockedCars.insert("race");

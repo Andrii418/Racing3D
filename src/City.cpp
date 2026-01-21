@@ -1,20 +1,34 @@
-#include "City.h"
+﻿#include "City.h"
 #include "Shader.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <glm/gtc/matrix_transform.hpp>
 
+/**
+ * @file City.cpp
+ * @brief Implementacja klasy `City` (wczytywanie OBJ, przygotowanie siatki, renderowanie).
+ */
+
+ /**
+  * @brief Konstruktor inicjalizujący transformację i uchwyty OpenGL.
+  * @param startPosition Pozycja początkowa modelu miasta.
+  */
 City::City(glm::vec3 startPosition)
     : Position(startPosition), Scale(glm::vec3(1.0f)), Yaw(0.0f), VAO(0), VBO(0), EBO(0) {
 }
 
+/**
+ * @brief Wczytuje model miasta z pliku OBJ i przygotowuje dane do renderingu.
+ * @param path Ścieżka do pliku OBJ; jeśli pusta, użyty zostanie domyślny plik.
+ * @return `true` jeśli wczytanie się powiodło; inaczej `false`.
+ */
 bool City::loadModel(const std::string& path) {
     std::string modelFile = path.empty() ? "assets/city/desert city.obj" : path;
 
     std::ifstream file(modelFile);
     if (!file.is_open()) {
-        std::cout << "Nie mog� otworzy� pliku: " << modelFile << std::endl;
+        std::cout << "Nie mogк otworzyж pliku: " << modelFile << std::endl;
         return false;
     }
 
@@ -78,12 +92,13 @@ bool City::loadModel(const std::string& path) {
     }
 
     setupMesh();
-    std::cout << "Za�adowano model miasta: " << vertices.size() << " wierzcho�k�w" << std::endl;
+    std::cout << "Zaіadowano model miasta: " << vertices.size() << " wierzchoіkуw" << std::endl;
     return true;
-    
-
 }
 
+/**
+ * @brief Wylicza normalne wierzchołków na podstawie trójkątów indeksowanych w `indices`.
+ */
 void City::calculateNormals() {
     normals.resize(vertices.size(), glm::vec3(0.0f));
     for (size_t i = 0; i < indices.size(); i += 3) {
@@ -104,11 +119,13 @@ void City::calculateNormals() {
     }
 }
 
+/**
+ * @brief Tworzy VAO/VBO/EBO oraz konfiguruje atrybuty wierzchołków (pozycja, normalna, UV).
+ */
 void City::setupMesh() {
     if (vertices.empty()) return;
 
-    
-        glGenVertexArrays(1, &VAO);
+    glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
 
@@ -144,10 +161,12 @@ void City::setupMesh() {
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 
     glBindVertexArray(0);
-    
-
 }
 
+/**
+ * @brief Oblicza macierz modelu miasta (translacja -> rotacja -> skala).
+ * @return Macierz modelu.
+ */
 glm::mat4 City::GetModelMatrix() const {
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, Position);
@@ -156,11 +175,16 @@ glm::mat4 City::GetModelMatrix() const {
     return model;
 }
 
+/**
+ * @brief Renderuje model miasta.
+ * @param shader Shader używany do renderowania.
+ * @param pos Opcjonalna pozycja nadpisująca.
+ * @param yaw Opcjonalny obrót nadpisujący (w stopniach).
+ */
 void City::Draw(const Shader& shader, glm::vec3 pos, float yaw) const {
     if (VAO == 0) return;
 
-    
-        glm::mat4 model = GetModelMatrix();
+    glm::mat4 model = GetModelMatrix();
     if (glm::length(pos) > 0.001f || std::abs(yaw) > 0.001f) {
         model = glm::translate(glm::mat4(1.0f), pos);
         model = glm::rotate(model, glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -173,6 +197,4 @@ void City::Draw(const Shader& shader, glm::vec3 pos, float yaw) const {
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
-    
-
 }

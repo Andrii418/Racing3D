@@ -4,97 +4,197 @@
 #include <vector>
 #include <string>
 
-// Deklaracja zapowiadająca klasy Shader, aby uniknąć problemów z cyklicznymi zależnościami.
+/**
+ * @file RaceCar.h
+ * @brief Definicje struktur i klas związanych z samochodem wyścigowym oraz jego siatkami renderingu.
+ */
+
+ /** @brief Deklaracja zapowiadająca klasy `Shader` w celu uniknięcia zależności cyklicznych. */
 class Shader;
 
-// Struktura przechowująca dane geometryczne (siatkę) części samochodu.
+/**
+ * @brief Struktura przechowująca dane geometryczne (siatkę) pojedynczej części modelu samochodu.
+ *
+ * Struktura zawiera dane wierzchołków, normalnych, współrzędnych UV, indeksów oraz uchwyty buforów OpenGL
+ * (VAO/VBO/EBO) niezbędne do renderowania metodą `glDrawElements`.
+ */
 struct CarMesh {
-    std::vector<glm::vec3> vertices;  // Pozycje wierzchołków.
-    std::vector<glm::vec3> normals;   // Wektory normalne (do oświetlenia).
-    std::vector<glm::vec2> texCoords; // Współrzędne tekstur.
-    std::vector<unsigned int> indices; // Indeksy wierzchołków (dla glDrawElements).
-    unsigned int VAO = 0, VBO = 0, EBO = 0; // Uchwyty (ID) buforów OpenGL.
+    /** @brief Pozycje wierzchołków w przestrzeni modelu. */
+    std::vector<glm::vec3> vertices;
 
-    // Konfiguruje bufory OpenGL (VAO, VBO, EBO) przesyłając dane z wektorów na kartę graficzną.
+    /** @brief Wektory normalne wierzchołków, wykorzystywane do oświetlenia. */
+    std::vector<glm::vec3> normals;
+
+    /** @brief Współrzędne UV przypisane do wierzchołków. */
+    std::vector<glm::vec2> texCoords;
+
+    /** @brief Indeksy wierzchołków wykorzystywane przez `glDrawElements`. */
+    std::vector<unsigned int> indices;
+
+    /** @brief Uchwyty buforów OpenGL: VAO, VBO, EBO. */
+    unsigned int VAO = 0, VBO = 0, EBO = 0;
+
+    /**
+     * @brief Konfiguruje bufory OpenGL dla siatki.
+     *
+     * Tworzy (lub odtwarza) VAO/VBO/EBO oraz przesyła dane z `vertices/normals/texCoords/indices`
+     * do pamięci GPU w układzie interleaved.
+     */
     void setupMesh();
 };
 
-// Klasa reprezentująca samochód wyścigowy w grze (dane fizyczne, logika ruchu, rendering).
+/**
+ * @brief Klasa reprezentująca samochód wyścigowy w grze (fizyka, logika ruchu, rendering).
+ *
+ * Klasa przechowuje parametry ruchu, wejście gracza, dane do renderingu i podstawową obsługę kolizji.
+ */
 class RaceCar {
 public:
-    // Podstawowe parametry transformacji w świecie 3D (pozycja, kierunek, prędkość, obrót).
+    /** @brief Aktualna pozycja samochodu w świecie. */
     glm::vec3 Position;
-    glm::vec3 PreviousPosition; // Służy do prostego cofania w przypadku kolizji (rysowanie po fakcie).
-    glm::vec3 Velocity;         // Wektor prędkości (zawiera kierunek i szybkość).
-    glm::vec3 FrontVector;      // Wektor jednostkowy wskazujący przód samochodu.
-    float Yaw;                  // Kąt obrotu samochodu wokół osi Y (w stopniach).
 
-    // --- STROJENIE FIZYKI (Cel: 18 km/h = 5.0 m/s) ---
-    float MaxSpeed = 5.0f;           // Maksymalna prędkość w metrach na sekundę (bardzo niska, jak w poleceniu).
-    float Acceleration = 8.0f;       // Moc silnika - jak szybko samochód nabiera prędkości.
-    float Braking = 10.0f;           // Siła hamowania - jak szybko samochód się zatrzymuje.
-    float TurnRate = 2.5f;           // Prędkość skręcania kół (wpływa na promień skrętu).
-    float WheelRotation = 0.0f;      // Bieżący kąt obrotu kół wokół własnej osi (animacja toczenia).
+    /** @brief Pozycja z poprzedniej klatki (używana do prostego cofania przy kolizji). */
+    glm::vec3 PreviousPosition;
 
-    // --- Parametry Oporu i Przyczepności ---
-    float Grip = 1.5f;               // Przyczepność opon (im wyższa, tym mniej poślizgu na zakrętach).
-    float AerodynamicDrag = 0.02f;   // Opór powietrza (spowalnia przy wyższych prędkościach, tu niski).
-    float RollingResistance = 0.5f;  // Opór toczenia (tarcie opon o asfalt, hamuje przy puszczeniu gazu).
-    float SteeringResponsiveness = 2.0f; // Jak szybko samochód reaguje na zmianę wektora prędkości przy skręcie.
+    /** @brief Aktualny wektor prędkości (kierunek i wartość). */
+    glm::vec3 Velocity;
 
-    // --- Hamulec Ręczny ---
-    bool Handbrake = false;                 // Flaga, czy spacja jest wciśnięta.
-    float HandbrakeGripReduction = 0.6f;    // O ile spada przyczepność przy zaciągniętym ręcznym (ułatwia drift).
-    float HandbrakeDeceleration = 0.95f;    // Współczynnik spowolnienia na ręcznym (mniejszy niż 1.0 powoduje hamowanie).
+    /** @brief Znormalizowany wektor wskazujący przód samochodu. */
+    glm::vec3 FrontVector;
 
-    // --- Wejście Gracza ---
-    float SteeringInput = 0.0f; // Wartość z klawiszy A/D (-1.0 do 1.0).
-    float ThrottleInput = 0.0f; // Wartość z klawiszy W/S (-1.0 do 1.0, gdzie minus to cofanie/hamowanie).
-    float Throttle = 0.0f;      // Rzeczywista wartość przepustnicy po wygładzeniu (dla płynniejszego startu).
-    float ThrottleResponse = 5.0f; // Szybkość reakcji przepustnicy na wciśnięcie klawisza.
+    /** @brief Kąt obrotu wokół osi Y (w stopniach). */
+    float Yaw;
 
-    // --- Ustawienia Wizualne Kół ---
-    float WheelFrontX = 0.45f; // Pozycja przednich kół na osi X (szerokość rozstawu).
-    float WheelBackX = 0.45f;  // Pozycja tylnych kół na osi X.
-    float WheelZ = 0.42f;      // Odległość osi od środka samochodu (rozstaw osi).
+    /** @brief Maksymalna prędkość w m/s. */
+    float MaxSpeed = 5.0f;
 
-    // Konstruktor: Inicjalizuje podstawowe wektory i pozycję startową.
+    /** @brief Współczynnik przyspieszenia (moc „silnika”). */
+    float Acceleration = 8.0f;
+
+    /** @brief Siła hamowania. */
+    float Braking = 10.0f;
+
+    /** @brief Prędkość skrętu (wpływa na zmianę `Yaw`). */
+    float TurnRate = 2.5f;
+
+    /** @brief Kąt obrotu kół (animacja toczenia). */
+    float WheelRotation = 0.0f;
+
+    /** @brief Przyczepność opon (wpływa na redukcję poślizgu bocznego). */
+    float Grip = 1.5f;
+
+    /** @brief Opór aerodynamiczny (zależny od kwadratu prędkości). */
+    float AerodynamicDrag = 0.02f;
+
+    /** @brief Opór toczenia (liniowy). */
+    float RollingResistance = 0.5f;
+
+    /** @brief Responsywność skrętu (jak szybko prędkość „wyrównuje się” do przodu auta). */
+    float SteeringResponsiveness = 2.0f;
+
+    /** @brief Czy hamulec ręczny jest aktywny. */
+    bool Handbrake = false;
+
+    /** @brief Redukcja przyczepności podczas hamulca ręcznego. */
+    float HandbrakeGripReduction = 0.6f;
+
+    /** @brief Współczynnik wytracania prędkości na ręcznym (<1.0 hamuje). */
+    float HandbrakeDeceleration = 0.95f;
+
+    /** @brief Wejście skrętu (np. A/D) w zakresie [-1, 1]. */
+    float SteeringInput = 0.0f;
+
+    /** @brief Wejście gazu/hamulca (np. W/S) w zakresie [-1, 1]. */
+    float ThrottleInput = 0.0f;
+
+    /** @brief Wygładzona wartość przepustnicy (dla płynności). */
+    float Throttle = 0.0f;
+
+    /** @brief Szybkość reakcji `Throttle` na `ThrottleInput`. */
+    float ThrottleResponse = 5.0f;
+
+    /** @brief Pozycja przednich kół na osi X. */
+    float WheelFrontX = 0.45f;
+
+    /** @brief Pozycja tylnych kół na osi X. */
+    float WheelBackX = 0.45f;
+
+    /** @brief Położenie osi kół względem środka na osi Z. */
+    float WheelZ = 0.42f;
+
+    /**
+     * @brief Tworzy instancję samochodu, inicjalizując stan początkowy.
+     * @param startPosition Pozycja początkowa w świecie.
+     */
     RaceCar(glm::vec3 startPosition = glm::vec3(0.0f, 0.2f, 0.0f));
 
-    // Ładuje modele 3D (karoseria i koła) z plików .obj.
-    // Zwraca false, jeśli wczytywanie się nie powiedzie.
+    /**
+     * @brief Ładuje zasoby modelu samochodu (karoseria i koła) oraz teksturę.
+     * @param bodyPath Ścieżka do pliku OBJ karoserii.
+     * @param wheelFrontPath Ścieżka do pliku OBJ przednich kół.
+     * @param wheelBackPath Ścieżka do pliku OBJ tylnych kół (opcjonalnie; jeśli puste, używa `wheelFrontPath`).
+     * @return `true` jeśli wszystkie elementy wczytano poprawnie; w przeciwnym razie `false`.
+     */
     bool loadAssets(const std::string& bodyPath, const std::string& wheelFrontPath, const std::string& wheelBackPath = "");
 
-    // Zwalnia zasoby OpenGL (usuwa bufory i tekstury).
+    /**
+     * @brief Zwalnia zasoby OpenGL i czyści dane siatek.
+     */
     void cleanup();
 
-    // Główna funkcja aktualizująca fizykę samochodu w każdej klatce gry.
-    // Oblicza nową pozycję na podstawie wejścia, prędkości, oporu i kolizji.
+    /**
+     * @brief Aktualizuje fizykę samochodu w czasie.
+     * @param deltaTime Czas między klatkami w sekundach.
+     */
     void Update(float deltaTime);
 
-    // Rysuje samochód na ekranie przy użyciu podanego shadera.
-    // Można nadpisać pozycję i obrót (np. do rysowania w menu).
+    /**
+     * @brief Rysuje samochód (karoseria + koła).
+     * @param shader Shader użyty do renderowania.
+     * @param pos Opcjonalna pozycja nadpisująca `Position` (np. podgląd w menu).
+     * @param yaw Opcjonalny obrót nadpisujący `Yaw` (w stopniach).
+     */
     void Draw(const Shader& shader, glm::vec3 pos = glm::vec3(0.0f), float yaw = 0.0f) const;
 
-    // Oblicza i zwraca macierz modelu (Model Matrix) potrzebną shaderom do transformacji wierzchołków.
+    /**
+     * @brief Zwraca macierz modelu (translacja + rotacja + skala).
+     * @return Macierz modelu używana w shaderze.
+     */
     glm::mat4 GetModelMatrix() const;
 
 private:
-    // Siatki dla poszczególnych części samochodu.
+    /** @brief Siatka karoserii. */
     CarMesh bodyMesh;
+
+    /** @brief Siatka przednich kół. */
     CarMesh wheelFrontMesh;
+
+    /** @brief Siatka tylnych kół. */
     CarMesh wheelBackMesh;
 
-    // ID tekstury nakładanej na samochód (wspólna dla wszystkich części).
+    /** @brief Identyfikator tekstury wspólnej dla wszystkich części. */
     unsigned int textureID = 0;
 
-    // Prosta obsługa kolizji z granicami świata (resetuje pozycję przy wypadnięciu z mapy).
+    /**
+     * @brief Prosta obsługa kolizji z granicami świata.
+     *
+     * Aktualnie realizuje cofnięcie do `PreviousPosition` jeśli auto wyjedzie poza dozwolony obszar.
+     */
     void HandleCollision();
 
-    // Funkcja pomocnicza parsująca pliki .obj i wypełniająca strukturę CarMesh.
-    // Parametr isBody pozwala na filtrowanie części (np. pomijanie kół w pliku body).
+    /**
+     * @brief Wczytuje plik OBJ i wypełnia strukturę `CarMesh`.
+     * @param path Ścieżka do pliku OBJ.
+     * @param mesh Struktura docelowa na wynik.
+     * @param isBody Jeśli `true`, parser pominie obiekty zawierające „wheel” w nazwie.
+     * @return `true` jeśli wczytanie i konfiguracja buforów zakończyły się sukcesem; inaczej `false`.
+     */
     bool loadObj(const std::string& path, CarMesh& mesh, bool isBody);
 
-    // Funkcja pomocnicza ładująca obrazek z dysku i tworząca teksturę OpenGL.
+    /**
+     * @brief Wczytuje teksturę z pliku i tworzy teksturę OpenGL.
+     * @param path Ścieżka do pliku tekstury.
+     * @return Identyfikator tekstury OpenGL.
+     */
     unsigned int loadTexture(const char* path);
 };

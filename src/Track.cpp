@@ -1,14 +1,26 @@
-#include "Track.h"
+﻿#include "Track.h"
 #include "Shader.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
 
+/**
+ * @file Track.cpp
+ * @brief Implementacja klasy `Track` generującej płaski tor i renderującej go w OpenGL.
+ */
+
+ /**
+  * @brief Konstruktor toru: inicjalizuje macierz modelu i generuje siatkę.
+  */
 Track::Track() {
     ModelMatrix = glm::mat4(1.0f);
     ModelMatrix = glm::scale(ModelMatrix, glm::vec3(20.0f, 1.0f, 20.0f));
     generateFlatTrack(10);
 }
 
+/**
+ * @brief Generuje płaską siatkę toru i tworzy bufory VAO/VBO/EBO.
+ * @param gridSize Liczba podziałów siatki na osi X/Z.
+ */
 void Track::generateFlatTrack(int gridSize) {
     float halfSize = 0.5f;
     vertices.clear();
@@ -49,7 +61,7 @@ void Track::generateFlatTrack(int gridSize) {
         }
     }
 
-    vertexCount = indices.size();
+    vertexCount = (int)indices.size();
 
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -74,6 +86,10 @@ void Track::generateFlatTrack(int gridSize) {
     glBindVertexArray(0);
 }
 
+/**
+ * @brief Renderuje tor, ustawiając macierz modelu i wywołując `glDrawElements`.
+ * @param shader Shader używany do renderowania.
+ */
 void Track::Draw(const Shader& shader) {
     shader.setMat4("model", ModelMatrix);
 

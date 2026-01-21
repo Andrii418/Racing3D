@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+﻿cmake_minimum_required(VERSION 3.16)
 project(Racing3D)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -16,12 +16,22 @@ set(IMGUI_SOURCES
     ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
 )
 
+# Ця команда автоматично знайде всі існуючі .cpp (RaceCar, Camera і т.д.)
+# і проігнорує видалені (Car, Karting, MiniMap).
 file(GLOB_RECURSE SRC_FILES_GAME "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
 add_executable(${PROJECT_NAME}
     ${SRC_FILES_GAME}
     ${IMGUI_SOURCES}
- "src/city.h" "src/City.cpp" "src/Model.cpp" "src/Karting.h" "src/RaceCar.h" "src/RaceCar.cpp" "src/TrackCollision.h" "src/TrackCollision.cpp" "src/ProfileManager.h") 
+    # Я прибрав звідси "src/Karting.h"
+    # Також видалив дублікати .cpp файлів, бо вони вже є в SRC_FILES_GAME
+    "src/city.h" 
+    "src/RaceCar.h" 
+    "src/TrackCollision.h" 
+    "src/ProfileManager.h"
+    "src/Model.h" 
+    "src/Camera.h"
+) 
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${IMGUI_DIR}
@@ -60,8 +70,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 )
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
-    message(STATUS "Kopiowanie shader�w do katalogu build...")
+    message(STATUS "Kopiowanie shaderów do katalogu build...")
     file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/shaders" DESTINATION "${CMAKE_BINARY_DIR}")
 else()
-    message(WARNING "Folder 'shaders' nie istnieje � pomijam kopiowanie.")
+    message(WARNING "Folder 'shaders' nie istnieje — pomijam kopiowanie.")
 endif()

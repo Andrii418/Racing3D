@@ -9,18 +9,21 @@
 #include <vector>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h" 
+#include "stb_image.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <windows.h>
-#pragma comment(lib, "winmm.lib") 
+#pragma comment(lib, "winmm.lib")
 
 #include "ProfileManager.h"
 
-// Struktura przechowująca pełną konfigurację pojedynczego samochodu.
-// Zawiera identyfikator, nazwę wyświetlaną, ścieżki do modeli 3D oraz parametry fizyczne/wizualne kół.
+/**
+ * @brief Struktura przechowująca pełną konfigurację pojedynczego samochodu.
+ *
+ * Zawiera identyfikator, nazwę wyświetlaną, ścieżki do modeli 3D oraz parametry fizyczne/wizualne kół.
+ */
 struct CarData {
     std::string id;
     std::string name;
@@ -33,8 +36,11 @@ struct CarData {
     float wheelZ;
 };
 
-// Baza danych dostępnych samochodów w grze (Garaż).
-// Każdy wpis definiuje unikalny pojazd z jego specyficznymi ustawieniami osi i ceną.
+/**
+ * @brief Baza danych dostępnych samochodów w grze (garaż).
+ *
+ * Każdy wpis definiuje unikalny pojazd z jego specyficznymi ustawieniami osi i ceną.
+ */
 std::vector<CarData> garage = {
     {"race", "Racer GT", "assets/cars/OBJ format/race.obj", "assets/cars/OBJ format/wheel-racing.obj", "", 0, 0.45f, 0.45f, 0.48f},
     {"police", "Police Car", "assets/cars/OBJ format/police.obj", "assets/cars/OBJ format/wheel-default.obj", "", 1000, 0.48f, 0.48f, 0.83f},
@@ -46,9 +52,12 @@ std::vector<CarData> garage = {
     {"tractor", "Tractor 500", "assets/cars/OBJ format/tractor.obj", "assets/cars/OBJ format/wheel-tractor-front.obj", "assets/cars/OBJ format/wheel-tractor-back.obj", 2000, 0.55f, 0.75f, 0.60f}
 };
 
+/** @brief Profil gracza (stan konta, odblokowania, aktualny wybór). */
 ProfileManager playerProfile;
 
-// Zabezpieczenie przed konfliktami makr min/max z Windows.h i biblioteką standardową C++.
+/**
+ * @brief Zabezpieczenie przed konfliktami makr `min/max` z `Windows.h` i standardową biblioteką C++.
+ */
 #ifdef min
 #undef min
 #endif
@@ -62,7 +71,7 @@ ProfileManager playerProfile;
 #include "Track.h"
 #include "TrackCollision.h"
 #include "City.h"
-#include "Model.h"      
+#include "Model.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -73,115 +82,127 @@ ProfileManager playerProfile;
 #include "backends/imgui_impl_opengl3.h"
 #include "imgui_internal.h"
 
-// Domyślne wymiary okna aplikacji.
+ /** @brief Domyślne wymiary okna aplikacji. */
 int current_width = 1280;
 int current_height = 720;
 
-// Zmienne obsługujące Framebuffer Object (FBO) do post-processingu i renderowania sceny do tekstury.
+/**
+ * @brief Zmienne obsługujące Framebuffer Object (FBO) do post-processingu i renderowania sceny do tekstury.
+ */
 unsigned int FBO_Scene;
 unsigned int textureColorBuffer;
 unsigned int RBO_DepthStencil;
 unsigned int quadVAO, quadVBO;
 
-// Identyfikatory tekstur dla elementów UI.
+/** @brief Identyfikatory tekstur dla elementów UI. */
 unsigned int grassTextureID = 0;
 unsigned int splashTextureID = 0;
 
-// Zmienne globalne odpowiedzialne za rendering Skyboxa (tła nieba).
+/** @brief Zmienne globalne odpowiedzialne za rendering skyboxa (tła nieba). */
 unsigned int skyboxVAO, skyboxVBO;
 unsigned int skyboxTexture;
 unsigned int skyboxShaderID;
 
-// Maszyna stanów gry zarządzająca przepływem sterowania (Ekran powitalny -> Menu -> Gra).
+/**
+ * @brief Maszyna stanów gry zarządzająca przepływem sterowania.
+ */
 enum GameState {
     SPLASH_SCREEN,
     MAIN_MENU,
     RACING
 };
 
-// Obiekty gracza i przeciwnika AI.
+/** @brief Obiekty gracza i przeciwnika AI. */
 RaceCar* car = nullptr;
 RaceCar* aiCar = nullptr;
 
-// System nawigacji AI oparty na liście punktów kontrolnych (waypoints).
+/**
+ * @brief System nawigacji AI oparty na liście punktów kontrolnych (waypoints).
+ */
 std::vector<glm::vec3> aiWaypoints;
 int aiCurrentWaypoint = 0;
-float aiWaypointRadius = 2.7f; // Tolerancja dotarcia do punktu
+float aiWaypointRadius = 2.7f;
 
-// Główne obiekty sceny: Kamera, Tory, Miasto.
+/** @brief Główne obiekty sceny: kamera, tory, miasto. */
 Camera* camera = nullptr;
 Track* track = nullptr;
 City* city = nullptr;
 Model* kartingMap = nullptr;
 
-// Tablica stanu klawiszy do obsługi wejścia.
+/** @brief Tablica stanu klawiszy do obsługi wejścia. */
 bool keys[1024] = { false };
 float lastFrame = 0.0f;
 GameState currentState = SPLASH_SCREEN;
 float splashTimer = 0.0f;
 glm::vec3 carCustomColor = glm::vec3(1.0f, 0.5f, 0.2f);
 
-// Ustawienia widoku i dźwięku.
+/** @brief Ustawienia widoku i dźwięku. */
 bool cockpitView = false;
 ma_engine audio_engine;
 ma_sound car_sound;
 bool isAudioInit = false;
 float masterVolume = 0.5f;
 
-// Flagi do sterowania interfejsem UI (ImGui).
+/** @brief Flagi do sterowania interfejsem UI (ImGui). */
 bool showSettings = false;
 bool showCarSelect = false;
 bool showTrackSelect = false;
 int selectedCar = 0;
-int selectedTrack = 2; // Domyślnie Karting GP
+int selectedTrack = 2;
 float timeOfDay = 0.75f;
 
-// Zmienne do wizualizacji w menu głównym (obracający się samochód).
+/** @brief Zmienne do wizualizacji w menu głównym (obracający się samochód). */
 float carMenuRotation = 0.0f;
 glm::vec3 menuCarPosition = glm::vec3(0.0f, 0.5f, 0.0f);
 float backgroundYaw = 0.0f;
 
-// Logika licznika czasu wyścigu.
+/** @brief Logika licznika czasu wyścigu. */
 bool raceTimerActive = false;
 float raceTimeLeft = 300.0f;
 float raceElapsedTime = 0.0f;
 bool raceFinished = false;
 bool raceWon = false;
 
-// System okrążeń.
+/** @brief System okrążeń. */
 int currentLap = 1;
 int selectedLapOption = 0;
 int totalLaps = 1;
 
-// System ekonomii w trakcie sesji.
+/** @brief System ekonomii w trakcie sesji. */
 int sessionMoney = 0;
 
-// Logika startu i mety.
+/** @brief Logika startu i mety. */
 glm::vec3 lapStartPosition;
 float lapFinishRadius = 2.0f;
 bool leftStartZone = false;
 
-// Stan wyścigu dla AI.
+/** @brief Stan wyścigu dla AI. */
 int aiCurrentLap = 1;
 bool aiLeftStartZone = false;
 bool aiRaceFinished = false;
 bool aiRaceWon = false;
 
-// Wektor kierunku toru do sprawdzania jazdy pod prąd.
+/** @brief Wektor kierunku toru do sprawdzania jazdy pod prąd. */
 glm::vec3 trackForward = glm::vec3(0.0f, 0.0f, 1.0f);
 
-// Logika odliczania przed startem (3-2-1-GO).
+/** @brief Logika odliczania przed startem (3-2-1-GO). */
 bool raceCountdownActive = false;
 float raceCountdown = 0.0f;
 bool showGoAnimation = false;
 float goTimer = 0.0f;
 const float goDuration = 0.8f;
 
+/**
+ * @brief Konfiguruje bufor ramki (FBO) dla renderowania sceny do tekstury.
+ * @param width Szerokość render targetu.
+ * @param height Wysokość render targetu.
+ */
 void setupFramebuffer(int width, int height);
 
-// Dane wierzchołków dla kostki Skyboxa.
+/**
+ * @brief Dane wierzchołków dla kostki skyboxa.
+ */
 float skyboxVertices[] = {
-    // pozycje          
     -1.0f,  1.0f, -1.0f,
     -1.0f, -1.0f, -1.0f,
      1.0f, -1.0f, -1.0f,
@@ -225,7 +246,11 @@ float skyboxVertices[] = {
      1.0f, -1.0f,  1.0f
 };
 
-// Funkcja ładująca 6 tekstur tworzących sześcian otoczenia (Cubemap) dla Skyboxa.
+/**
+ * @brief Ładuje 6 tekstur tworzących cubemap (skybox).
+ * @param faces Lista ścieżek do tekstur w kolejności odpowiadającej ścianom cubemapy.
+ * @return Identyfikator tekstury cubemap.
+ */
 unsigned int loadCubemap(std::vector<std::string> faces)
 {
     unsigned int textureID;
@@ -258,7 +283,10 @@ unsigned int loadCubemap(std::vector<std::string> faces)
     return textureID;
 }
 
-// Ręczne tworzenie i kompilacja prostego shadera dla Skyboxa.
+/**
+ * @brief Buduje i linkuje prosty program shaderów dla skyboxa.
+ * @return Identyfikator programu shaderów OpenGL.
+ */
 unsigned int createSkyboxShaderProgram() {
     const char* vertexShaderSource = R"(
         #version 330 core
@@ -280,7 +308,7 @@ unsigned int createSkyboxShaderProgram() {
         in vec3 TexCoords;
         uniform samplerCube skybox;
         void main()
-        {    
+        {
             FragColor = texture(skybox, TexCoords);
         }
     )";
@@ -304,7 +332,11 @@ unsigned int createSkyboxShaderProgram() {
     return shaderProgram;
 }
 
-// Funkcja pomocnicza do ładowania standardowych tekstur 2D.
+/**
+ * @brief Wczytuje teksturę 2D z pliku.
+ * @param path Ścieżka do pliku.
+ * @return Identyfikator tekstury OpenGL lub 0 w przypadku błędu.
+ */
 unsigned int loadTexture(const char* path) {
     unsigned int textureID;
     glGenTextures(1, &textureID);
@@ -336,7 +368,15 @@ unsigned int loadTexture(const char* path) {
     return textureID;
 }
 
-// Callback wywoływany przy zmianie rozmiaru okna - aktualizuje Viewport i Framebuffer.
+/**
+ * @brief Callback wywoływany przy zmianie rozmiaru okna.
+ *
+ * Aktualizuje viewport oraz odtwarza FBO, jeśli jest aktywne.
+ *
+ * @param window Okno GLFW.
+ * @param width Nowa szerokość.
+ * @param height Nowa wysokość.
+ */
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
     current_width = width;
@@ -346,8 +386,17 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     }
 }
 
-// Główna funkcja obsługująca wejście z klawiatury.
-// Zarządza stanami przycisków i globalnymi skrótami (np. ESC do wyjścia).
+/**
+ * @brief Callback klawiatury.
+ *
+ * Zarządza stanem klawiszy, skrótami globalnymi oraz przełączaniem trybów w UI.
+ *
+ * @param window Okno GLFW.
+ * @param key Kod klawisza.
+ * @param scancode Kod skanowania.
+ * @param action Akcja (wciśnięcie/zwolnienie).
+ * @param mods Modyfikatory.
+ */
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     static bool handling = false;
     if (handling) return;
@@ -386,7 +435,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
             keys[key] = false;
     }
 
-    // Przełączanie widoku (kokpit/trzecia osoba)
     if (key == GLFW_KEY_C && action == GLFW_PRESS) {
         cockpitView = !cockpitView;
     }
@@ -394,14 +442,19 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     handling = false;
 }
 
-// Logika sterowania samochodem gracza (fizyka wejścia).
-// Mapuje klawisze WASD na parametry fizyczne obiektu RaceCar.
+/**
+ * @brief Logika sterowania samochodem gracza.
+ *
+ * Mapuje klawisze WASD/SPACE na parametry fizyczne obiektu `RaceCar`
+ * i uwzględnia blokadę sterowania podczas odliczania oraz animacji startu.
+ *
+ * @param deltaTime Czas trwania klatki.
+ */
 void processCarInput(float deltaTime) {
     if (!car || currentState != RACING) {
         return;
     }
 
-    // Blokada sterowania podczas odliczania lub animacji "GO!".
     if (raceCountdownActive || showGoAnimation) {
         if (car) {
             car->ThrottleInput = 0.0f;
@@ -453,7 +506,11 @@ void processCarInput(float deltaTime) {
         car->FrontVector = glm::vec3(0.0f, 0.0f, 1.0f);
 }
 
-// Inicjalizacja prostokąta (Quad), na który nakładamy wyrenderowaną scenę (Post-Processing).
+/**
+ * @brief Inicjalizuje prostokąt (quad) do post-processingu.
+ *
+ * Tworzy VAO/VBO prostokąta ekranowego z pozycją i UV.
+ */
 void setupPostProcessingQuad() {
     float quadVertices[] = {
         -1.0f,  1.0f,  0.0f, 1.0f,
@@ -475,7 +532,11 @@ void setupPostProcessingQuad() {
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 }
 
-// Konfiguracja bufora ramki (FBO) - tekstura koloru + bufor głębokości i szablonu.
+/**
+ * @brief Konfiguracja bufora ramki (FBO) - tekstura koloru + bufor głębokości i szablonu.
+ * @param width Szerokość render targetu.
+ * @param height Wysokość render targetu.
+ */
 void setupFramebuffer(int width, int height) {
     if (FBO_Scene != 0) {
         glDeleteFramebuffers(1, &FBO_Scene);
@@ -504,7 +565,9 @@ void setupFramebuffer(int width, int height) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-// Renderowanie ekranu powitalnego (Splash Screen) przy użyciu ImGui.
+/**
+ * @brief Renderuje ekran powitalny (Splash Screen) przy użyciu ImGui.
+ */
 void RenderSplashScreen() {
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImVec2(current_width, current_height));
@@ -537,7 +600,11 @@ void RenderSplashScreen() {
     ImGui::End();
 }
 
-// Renderowanie menu wyboru samochodu (Garage). Zawiera logikę kupowania i wyboru aut.
+/**
+ * @brief Renderuje menu wyboru samochodu (garaż).
+ *
+ * Zawiera logikę kupowania i wybierania samochodów.
+ */
 void RenderCarSelectMenu() {
     ImGui::SetNextWindowPos(ImVec2(current_width * 0.5f, current_height * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
     ImGui::SetNextWindowSize(ImVec2(600, 500));
@@ -589,7 +656,9 @@ void RenderCarSelectMenu() {
     ImGui::End();
 }
 
-// Renderowanie menu wyboru trasy.
+/**
+ * @brief Renderuje menu wyboru trasy.
+ */
 void RenderTrackSelectMenu() {
     ImGui::SetNextWindowPos(ImVec2(current_width * 0.5f, current_height * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
     ImGui::SetNextWindowSize(ImVec2(500, 400));
@@ -641,7 +710,9 @@ void RenderTrackSelectMenu() {
     ImGui::End();
 }
 
-// Renderowanie menu ustawień (dźwięk, grafika, debugowanie fizyki).
+/**
+ * @brief Renderuje menu ustawień (dźwięk, grafika, strojenie fizyki).
+ */
 void RenderSettingsMenu() {
     ImGui::SetNextWindowPos(ImVec2(current_width * 0.5f, current_height * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
     ImGui::SetNextWindowSize(ImVec2(400, 360));
@@ -666,7 +737,6 @@ void RenderSettingsMenu() {
         }
     }
 
-    // Logika sterowania synchronizacją pionową (VSync).
     static bool vsync = true;
     if (ImGui::Checkbox("V-Sync Enabled", &vsync)) {
         glfwSwapInterval(vsync ? 1 : 0);
@@ -696,7 +766,9 @@ void RenderSettingsMenu() {
     ImGui::End();
 }
 
-// Renderowanie głównego menu gry.
+/**
+ * @brief Renderuje główne menu gry.
+ */
 void RenderMainMenu() {
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImVec2(current_width, current_height));
@@ -783,12 +855,10 @@ void RenderMainMenu() {
     ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 0.5f, 0.2f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
 
-    // Logika rozpoczęcia wyścigu i resetowania stanu gry.
     if (ImGui::Button("START RACE", buttonSize)) {
 
         currentState = RACING;
 
-        // Ustawienie czasu i liczby okrążeń.
         if (selectedLapOption == 0) {
             totalLaps = 1;
             raceTimeLeft = 60.0f;
@@ -807,7 +877,6 @@ void RenderMainMenu() {
         }
 
         if (car) {
-            // Skalowanie i ustawianie pozycji startowej na mapie Kartingowej.
             glm::vec3 scaleFactor(0.1f);
 
             glm::vec3 startLeft(-127.81f, 0.0f, 204.38f);
@@ -828,7 +897,6 @@ void RenderMainMenu() {
             float startYaw = glm::degrees(atan2(dir.x, dir.z));
             car->Position = startPos;
 
-            // Resetowanie zmiennych wyścigu.
             lapStartPosition = car->Position;
             raceElapsedTime = 0.0f;
             sessionMoney = 0;
@@ -851,7 +919,6 @@ void RenderMainMenu() {
             car->Yaw = startYaw;
             car->FrontVector = glm::normalize(glm::vec3(sin(glm::radians(startYaw)), 0.0f, cos(glm::radians(startYaw))));
 
-            // Pozycjonowanie AI blisko gracza.
             glm::vec3 forward = glm::normalize(car->FrontVector);
             glm::vec3 leftVec = glm::normalize(glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), forward));
 
@@ -867,7 +934,6 @@ void RenderMainMenu() {
             aiCurrentWaypoint = 0;
         }
 
-        // Aktywacja odliczania.
         raceCountdownActive = true;
         raceCountdown = 3.0f;
         showGoAnimation = false;
@@ -901,8 +967,17 @@ void RenderMainMenu() {
     ImGui::End();
 }
 
-// Funkcja pomocnicza do rysowania mini-mapy w interfejsie.
-// Przelicza współrzędne świata na współrzędne ekranowe UI, uwzględniając obrót mapy.
+/**
+ * @brief Rysuje mini-mapę w interfejsie.
+ *
+ * Przelicza współrzędne świata na współrzędne ekranowe UI, uwzględniając orientację mapy.
+ *
+ * @param draw Lista rysowania ImGui.
+ * @param topLeft Lewy górny róg obszaru mini-mapy.
+ * @param size Rozmiar mini-mapy.
+ * @param playerPos Pozycja gracza w świecie.
+ * @param aiPos Pozycja AI w świecie.
+ */
 static void DrawMiniMap(ImDrawList* draw, const ImVec2& topLeft, const ImVec2& size, const glm::vec3& playerPos, const glm::vec3& aiPos) {
     using namespace glm;
     const auto& walls = TrackCollision::GetWalls();
@@ -955,9 +1030,11 @@ static void DrawMiniMap(ImDrawList* draw, const ImVec2& topLeft, const ImVec2& s
     draw->AddCircleFilled(aiP, markerR, IM_COL32(40, 220, 100, 220));
 }
 
-// Główna funkcja programu (Main Entry Point).
+/**
+ * @brief Główna funkcja programu (punkt wejścia).
+ * @return Kod zakończenia procesu (0 oznacza poprawne zakończenie).
+ */
 int main() {
-    // Inicjalizacja GLFW i konfiguracja wersji OpenGL.
     if (!glfwInit()) return -1;
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -973,11 +1050,9 @@ int main() {
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetKeyCallback(window, key_callback);
 
-    // Ładowanie wskaźników funkcji OpenGL przez GLAD.
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) return -1;
     glEnable(GL_DEPTH_TEST);
 
-    // Inicjalizacja biblioteki GUI (Dear ImGui).
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -994,7 +1069,6 @@ int main() {
     style.Colors[ImGuiCol_Border] = ImVec4(0.1f, 0.5f, 1.0f, 1.0f);
     style.Colors[ImGuiCol_Text] = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
 
-    // Kompilacja shaderów oświetlenia (Phong) i post-processingu.
     Shader carTrackShader("shaders/phong.vert", "shaders/phong.frag");
     Shader postProcessShader("shaders/postprocess.vert", "shaders/postprocess.frag");
     postProcessShader.use();
@@ -1005,7 +1079,6 @@ int main() {
 
     stbi_set_flip_vertically_on_load(false);
 
-    // Przygotowanie Skyboxa (VAO, VBO, ładowanie tekstur).
     glGenVertexArrays(1, &skyboxVAO);
     glGenBuffers(1, &skyboxVBO);
     glBindVertexArray(skyboxVAO);
@@ -1029,7 +1102,6 @@ int main() {
 
     playerProfile.load();
 
-    // Inicjalizacja silnika dźwiękowego MiniAudio.
     if (ma_engine_init(NULL, &audio_engine) == MA_SUCCESS) {
         if (ma_sound_init_from_file(&audio_engine, "assets/sound/loop_5.wav", 0, NULL, NULL, &car_sound) == MA_SUCCESS) {
             ma_sound_set_looping(&car_sound, MA_TRUE);
@@ -1047,7 +1119,6 @@ int main() {
 
     car = new RaceCar(glm::vec3(0.0f, 0.1f, 0.0f));
 
-    // Bezpieczne ładowanie ostatnio używanego samochodu z profilu gracza.
     bool loaded = false;
     for (const auto& c : garage) {
         if (c.id == playerProfile.currentCarId) {
@@ -1066,11 +1137,9 @@ int main() {
         car->loadAssets(garage[0].bodyPath, garage[0].wheelFrontPath, garage[0].wheelBackPath);
     }
 
-    // Inicjalizacja pojazdu bota AI.
     aiCar = new RaceCar(car->Position + glm::vec3(-3.0f, 0.0f, -3.0f));
     aiCar->loadAssets("assets/cars/OBJ format/race.obj", "assets/cars/OBJ format/wheel-racing.obj");
 
-    // Definicja trasy dla AI (punkty kontrolne).
     aiWaypoints.clear();
     aiWaypoints.push_back(glm::vec3(-17.4033f, 0.0f, 19.7189f));
     aiWaypoints.push_back(glm::vec3(-15.3660f, 0.0f, 19.6832f));
@@ -1161,15 +1230,12 @@ int main() {
     kartingMap = new Model("assets/karting/gp.obj");
     TrackCollision::Init(2.0f);;
 
-    // Główna Pętla Gry (Game Loop).
     while (!glfwWindowShouldClose(window)) {
 
-        // Obliczanie czasu klatki (Delta Time).
         float currentFrame = glfwGetTime();
         float deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        // Logika stanu: Ekran startowy.
         if (currentState == SPLASH_SCREEN) {
             if (isAudioInit) {
                 ma_sound_set_volume(&car_sound, 0.0f);
@@ -1178,7 +1244,6 @@ int main() {
             if (splashTimer > 2.5f) currentState = MAIN_MENU;
         }
 
-        // Logika stanu: Menu główne (obracanie samochodu w tle).
         else if (currentState == MAIN_MENU) {
             carMenuRotation += 90.0f * deltaTime;
             if (carMenuRotation > 360.0f) carMenuRotation -= 360.0f;
@@ -1186,10 +1251,8 @@ int main() {
             if (backgroundYaw > 360.0f) backgroundYaw -= 360.0f;
         }
 
-        // Logika stanu: Wyścig (fizyka, AI, kolizje).
         else if (currentState == RACING) {
 
-            // Aktualizacja parametrów dźwięku (wysokość tonu zależna od prędkości).
             if (isAudioInit && car) {
                 float currentSpeed = glm::length(car->Velocity);
                 float pitch = 0.5f + (currentSpeed / car->MaxSpeed) * 1.5f;
@@ -1197,7 +1260,6 @@ int main() {
                 ma_sound_set_volume(&car_sound, masterVolume);
             }
 
-            // Aktualizacja licznika czasu.
             if (raceTimerActive && !raceFinished) {
                 raceTimeLeft -= deltaTime;
                 raceElapsedTime += deltaTime;
@@ -1207,7 +1269,6 @@ int main() {
                     raceWon = false;
                     raceTimerActive = false;
 
-                    // Zapisanie zarobionych pieniędzy.
                     if (sessionMoney > 0) {
                         playerProfile.addMoney(sessionMoney);
                         playerProfile.save();
@@ -1215,31 +1276,25 @@ int main() {
                 }
             }
 
-            // Jeśli trwa wyścig (nie ma odliczania), aktualizujemy fizykę.
             if (!raceCountdownActive && !showGoAnimation) {
                 processCarInput(deltaTime);
 
-                // Zapamiętanie bezpiecznej pozycji przed ruchem (do detekcji kolizji).
                 glm::vec3 lastSafePos = car->Position;
 
-                // Aktualizacja fizyki gracza.
                 car->Update(deltaTime);
 
-                // Logika Bota AI: Podążanie za punktami (Waypoints).
                 if (aiCar && !aiWaypoints.empty()) {
 
                     glm::vec3 target = aiWaypoints[aiCurrentWaypoint];
                     glm::vec3 toTarget = target - aiCar->Position;
                     float distance = glm::length(toTarget);
 
-                    // Zmiana celu na kolejny punkt, jeśli bot jest blisko.
                     if (distance < aiWaypointRadius) {
                         aiCurrentWaypoint++;
                         if (aiCurrentWaypoint >= aiWaypoints.size())
                             aiCurrentWaypoint = 0;
                     }
 
-                    // Obliczanie kąta skrętu.
                     float desiredYaw = glm::degrees(atan2(toTarget.x, toTarget.z));
                     float yawDiff = desiredYaw - aiCar->Yaw;
 
@@ -1248,7 +1303,6 @@ int main() {
 
                     aiCar->SteeringInput = glm::clamp(yawDiff / 25.0f, -1.0f, 1.0f);
 
-                    // Dostosowanie przepustnicy AI (zwalnia na ostrych zakrętach).
                     float absYaw = fabs(yawDiff);
                     if (absYaw > 60.0f)
                         aiCar->ThrottleInput = 0.4f;
@@ -1257,7 +1311,6 @@ int main() {
                     else
                         aiCar->ThrottleInput = 1.0f;
 
-                    // Aktualizacja fizyki AI.
                     float speed = glm::length(aiCar->Velocity);
                     if (speed > 0.1f) {
                         float turnAmount = aiCar->TurnRate * deltaTime * 50.0f;
@@ -1272,19 +1325,16 @@ int main() {
 
                     aiCar->Update(deltaTime);
 
-                    // Ograniczenie prędkości AI.
                     float aiSpeed = glm::length(aiCar->Velocity);
                     if (aiSpeed > aiCar->MaxSpeed)
                         aiCar->Velocity = glm::normalize(aiCar->Velocity) * aiCar->MaxSpeed;
                 }
 
-                // Ograniczenie prędkości gracza.
                 float speed = glm::length(car->Velocity);
                 if (speed > car->MaxSpeed) {
                     car->Velocity = glm::normalize(car->Velocity) * car->MaxSpeed;
                 }
 
-                // Sprawdzanie warunków ukończenia okrążenia przez AI.
                 float dist = glm::distance(aiCar->Position, lapStartPosition);
                 if (!aiLeftStartZone && dist > lapFinishRadius * 2.0f) aiLeftStartZone = true;
 
@@ -1310,7 +1360,6 @@ int main() {
                     aiLeftStartZone = false;
                 }
 
-                // Sprawdzanie warunków ukończenia okrążenia przez Gracza.
                 dist = glm::distance(car->Position, lapStartPosition);
                 if (!leftStartZone && dist > lapFinishRadius * 2.0f) leftStartZone = true;
 
@@ -1319,7 +1368,6 @@ int main() {
                 if (leftStartZone && dist < lapFinishRadius && raceTimerActive && isMovingForward) {
                     currentLap++;
 
-                    // Nagroda za okrążenie.
                     sessionMoney += 50;
 
                     if (currentLap > totalLaps) {
@@ -1351,7 +1399,6 @@ int main() {
                     leftStartZone = false;
                 }
 
-                // Sprawdzanie kolizji ze ścianami (tylko na mapie Kartingowej).
                 if (selectedTrack == 2) {
                     TrackCollision track;
 
@@ -1361,7 +1408,6 @@ int main() {
                     }
                 }
 
-                // Opcjonalne debugowanie pozycji (Klawisz P).
                 static float logTimer = 0.0f;
                 logTimer += deltaTime;
                 if (keys[GLFW_KEY_P] && logTimer > 0.2f) {
@@ -1372,7 +1418,6 @@ int main() {
             }
             else {
 
-                // Logika odliczania startowego.
                 if (raceCountdownActive) {
                     raceCountdown -= deltaTime;
                     if (raceCountdown <= 0.0f) {
@@ -1387,7 +1432,6 @@ int main() {
                     }
                 }
 
-                // Animacja "GO!".
                 if (showGoAnimation) {
                     goTimer -= deltaTime;
                     if (goTimer <= 0.0f) {
@@ -1399,7 +1443,6 @@ int main() {
             }
         }
 
-        // Aktualizacja kamery.
         if (camera && car) {
             if (currentState == RACING) {
                 if (cockpitView) {
@@ -1414,7 +1457,6 @@ int main() {
             }
         }
 
-        // RENDEROWANIE SCENY 3D (Pass 1 - do Framebuffera).
         glBindFramebuffer(GL_FRAMEBUFFER, FBO_Scene);
         glEnable(GL_DEPTH_TEST);
         glViewport(0, 0, current_width, current_height);
@@ -1423,7 +1465,6 @@ int main() {
         glClearColor(skyColor.r, skyColor.g, skyColor.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Ustawianie macierzy widoku i projekcji dla shadera.
         carTrackShader.use();
         if (camera) {
             carTrackShader.setMat4("view", camera->GetViewMatrix());
@@ -1439,7 +1480,6 @@ int main() {
         if (camera)
             carTrackShader.setVec3("viewPos", camera->Position);
 
-        // Rysowanie otoczenia (trasy/miasta).
         if (selectedTrack == 0 && track) {
             track->Draw(carTrackShader);
         }
@@ -1456,7 +1496,6 @@ int main() {
             kartingMap->Draw(carTrackShader);
         }
 
-        // Rysowanie samochodu gracza.
         if (car) {
             carTrackShader.setVec3("objectColor", carCustomColor);
 
@@ -1468,7 +1507,6 @@ int main() {
             }
         }
 
-        // Rysowanie samochodu przeciwnika.
         if (aiCar && currentState == RACING) {
             carTrackShader.use();
             carTrackShader.setVec3("objectColor", glm::vec3(0.2f, 0.8f, 0.2f));
@@ -1476,7 +1514,6 @@ int main() {
             carTrackShader.setVec3("objectColor", carCustomColor);
         }
 
-        // Renderowanie Skyboxa (musi być rysowany na końcu z odpowiednim testem głębokości).
         if (camera) {
             glDepthFunc(GL_LEQUAL);
             glUseProgram(skyboxShaderID);
@@ -1495,7 +1532,6 @@ int main() {
             glDepthFunc(GL_LESS);
         }
 
-        // POST-PROCESSING (Pass 2 - z FBO na Ekran).
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDisable(GL_DEPTH_TEST);
         glViewport(0, 0, current_width, current_height);
@@ -1511,7 +1547,6 @@ int main() {
         glBindTexture(GL_TEXTURE_2D, textureColorBuffer);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        // GUI INTERFACE (Pass 3 - Rysowanie UI na wierzchu).
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -1520,7 +1555,6 @@ int main() {
         else if (currentState == MAIN_MENU) RenderMainMenu();
         else if (currentState == RACING && car) {
 
-            // UI Odliczania.
             if (raceCountdownActive) {
                 int displayNum = (int)std::ceil(raceCountdown);
                 float frac = raceCountdown - std::floor(raceCountdown);
@@ -1595,7 +1629,6 @@ int main() {
                 ImGui::SetNextWindowPos(ImVec2(10, current_height - 60));
             }
 
-            // HUD Wyścigu (Prędkościomierz, Czas, Okrążenia).
             if (!raceCountdownActive && !showGoAnimation) {
                 ImGui::SetNextWindowPos(ImVec2(10, current_height - 60));
                 float panelWidth = 320.0f;
@@ -1679,7 +1712,6 @@ int main() {
 
                 ImGui::End();
 
-                // HUD Mini-mapy.
                 ImGui::SetNextWindowPos(ImVec2(current_width - 220, current_height - 220), ImGuiCond_Always);
                 ImGui::SetNextWindowSize(ImVec2(200, 200));
                 ImGui::Begin("MiniMap", nullptr,
@@ -1713,7 +1745,6 @@ int main() {
             }
         }
 
-        // Ekran końcowy wyścigu (Wygrana/Przegrana).
         if (raceFinished && currentState == RACING) {
             static float winAnimTime = 0.0f;
             winAnimTime += deltaTime;
@@ -1842,7 +1873,6 @@ int main() {
         glfwPollEvents();
     }
 
-    // Sprzątanie po zakończeniu programu (zwalnianie pamięci).
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();

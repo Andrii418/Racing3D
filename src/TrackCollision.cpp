@@ -1,15 +1,15 @@
-﻿// TrackCollision.cpp
-#define GLM_ENABLE_EXPERIMENTAL
+﻿#define GLM_ENABLE_EXPERIMENTAL
 #include "TrackCollision.h"
 #include <glm/glm.hpp>
-#include <glm/gtx/norm.hpp> // glm::length2
+#include <glm/gtx/norm.hpp>
 #include <algorithm>
 #include <limits>
 
-// -----------------------------
-// Lewa strona
-// Uwaga: nazwy pól Point::x = X (map X), Point::y = Z (map Z)
-// -----------------------------
+/**
+ * @file TrackCollision.cpp
+ * @brief Implementacja budowania ścian toru i testów kolizji okrąg–odcinek w płaszczyźnie XZ.
+ */
+
 const std::vector<Point> TrackCollision::leftSideRaw = {
     {-19.124f, 18.8322f},
     {-18.3621f, 18.8469f},
@@ -188,7 +188,6 @@ const std::vector<Point> TrackCollision::leftSideRaw = {
     {-18.6596f, 18.821f}
 };
 
-// Prawa strona drogi 
 const std::vector<Point> TrackCollision::rightSideRaw = {
 {-19.563, 20.7479},
 { -19.2772, 20.7266 },
@@ -401,13 +400,15 @@ const std::vector<Point> TrackCollision::rightSideRaw = {
 { -18.9545, 20.6843 },
 { -18.5497, 20.6779 },
 { -18.223, 20.7076 },
-
-
 };
-// wynikowe ściany
+
 std::vector<WallSegment> TrackCollision::walls;
 
-// -------------------------------
+/**
+ * @brief Usuwa punkty z polilinii, które są zbyt blisko siebie (filtr dystansu).
+ * @param pts Lista punktów w 2D (modyfikowana).
+ * @param minDist Minimalny dystans między kolejnymi punktami.
+ */
 static void RemoveClosePoints(std::vector<glm::vec2>& pts, float minDist = 1e-4f) {
     if (pts.empty()) return;
     std::vector<glm::vec2> out;
@@ -420,6 +421,13 @@ static void RemoveClosePoints(std::vector<glm::vec2>& pts, float minDist = 1e-4f
     pts.swap(out);
 }
 
+/**
+ * @brief Liczy odległość punktu od odcinka AB w 2D.
+ * @param a Początek odcinka.
+ * @param b Koniec odcinka.
+ * @param p Punkt testowany.
+ * @return Odległość euklidesowa punktu od odcinka.
+ */
 static float PerpDist(const glm::vec2& a, const glm::vec2& b, const glm::vec2& p) {
     glm::vec2 ab = b - a;
     float ab2 = glm::dot(ab, ab);
@@ -430,6 +438,12 @@ static float PerpDist(const glm::vec2& a, const glm::vec2& b, const glm::vec2& p
     return glm::length(p - proj);
 }
 
+/**
+ * @brief Uproszczenie polilinii algorytmem Ramer–Douglas–Peucker.
+ * @param pts Wejściowa polilinia.
+ * @param eps Tolerancja uproszczenia (większa = mniej punktów).
+ * @param out Wynikowa uproszczona polilinia.
+ */
 static void RDP(const std::vector<glm::vec2>& pts, float eps, std::vector<glm::vec2>& out) {
     if (pts.size() < 2) { out = pts; return; }
     float maxd = 0.0f;
@@ -446,13 +460,19 @@ static void RDP(const std::vector<glm::vec2>& pts, float eps, std::vector<glm::v
         RDP(b, eps, right);
         out = left;
         out.insert(out.end(), right.begin() + 1, right.end());
-    } else {
+    }
+    else {
         out.clear();
         out.push_back(pts.front());
         out.push_back(pts.back());
     }
 }
 
+/**
+ * @brief Proste wygładzenie polilinii metodą ruchomej średniej.
+ * @param pts Polilinia (modyfikowana).
+ * @param radius Promień okna (liczba sąsiadów po obu stronach).
+ */
 static void SmoothPolyline(std::vector<glm::vec2>& pts, int radius = 1) {
     if (pts.size() < 3 || radius <= 0) return;
     std::vector<glm::vec2> tmp = pts;
@@ -470,40 +490,54 @@ static void SmoothPolyline(std::vector<glm::vec2>& pts, int radius = 1) {
     }
 }
 
-// Buduje ściany z dwóch stron, ale pomija fragmenty gdzie odległość między stronami jest zbyt mała (np. pod mostem)
-static void BuildWallsFromSides(const std::vector<Point>& leftRaw, const std::vector<Point>& rightRaw, std::vector<WallSegment>& outWalls, float minTrackWidth) {
+/**
+ * @brief Buduje ściany z dwóch stron toru i odfiltrowuje fragmenty o zbyt małej szerokości.
+ *
+ * Generuje listę segmentów będących ścianami do testów kolizji, wykonując:
+ * - konwersję danych surowych do `glm::vec2`,
+ * - filtrację punktów,
+ * - wygładzenie,
+ * - uproszczenie RDP,
+ * - odfiltrowanie segmentów, gdzie „odległość do przeciwnej strony” jest zbyt mała.
+ *
+ * @param leftRaw Polilinia lewej strony (surowe punkty).
+ * @param rightRaw Polilinia prawej strony (surowe punkty).
+ * @param outWalls Wynikowe segmenty ścian.
+ * @param minTrackWidth Minimalna szerokość toru używana przy filtracji.
+ */
+static void BuildWallsFromSides(
+    const std::vector<Point>& leftRaw,
+    const std::vector<Point>& rightRaw,
+    std::vector<WallSegment>& outWalls,
+    float minTrackWidth)
+{
     outWalls.clear();
 
-    // konwersja do glm::vec2
     std::vector<glm::vec2> left, right;
     left.reserve(leftRaw.size());
     right.reserve(rightRaw.size());
     for (const auto& p : leftRaw) left.emplace_back(p.x, p.y);
     for (const auto& p : rightRaw) right.emplace_back(p.x, p.y);
 
-    // usuń bardzo bliskie punkty
-    RemoveClosePoints(left,1e-5f);
-    RemoveClosePoints(right,1e-5f);
+    RemoveClosePoints(left, 1e-5f);
+    RemoveClosePoints(right, 1e-5f);
 
-    // wygładź (opcjonalne)
-    SmoothPolyline(left,1);
-    SmoothPolyline(right,1);
+    SmoothPolyline(left, 1);
+    SmoothPolyline(right, 1);
 
-    // uprość poliliny RDP
     std::vector<glm::vec2> leftS, rightS;
-    RDP(left,0.02f, leftS);
-    RDP(right,0.02f, rightS);
+    RDP(left, 0.02f, leftS);
+    RDP(right, 0.02f, rightS);
 
-    // pomocnicze funkcje
     auto avgDistToOther = [&](const glm::vec2& a, const glm::vec2& b, const std::vector<glm::vec2>& other) {
-        glm::vec2 mid = (a + b) *0.5f;
+        glm::vec2 mid = (a + b) * 0.5f;
         float minD = std::numeric_limits<float>::max();
         for (const auto& p : other) {
             float d = glm::distance(mid, p);
             if (d < minD) minD = d;
         }
         return minD;
-    };
+        };
 
     auto nearestPointInPolyline = [&](const glm::vec2& mid, const std::vector<glm::vec2>& other) {
         glm::vec2 best(0.0f);
@@ -514,31 +548,26 @@ static void BuildWallsFromSides(const std::vector<Point>& leftRaw, const std::ve
             if (d2 < minD2) { minD2 = d2; best = p; }
         }
         return best;
-    };
+        };
 
     const float MIN_TRACK_WIDTH = minTrackWidth;
-    const float MAX_TRACK_WIDTH =100.0f;
+    const float MAX_TRACK_WIDTH = 100.0f;
 
-    // ile przesuwamy lewą polilinię na zewnątrz (w lewo)
-    // zmniejszamy o0.05, aby przesunąć w prawo
-    const float LEFT_SHIFT =0.30f;
+    const float LEFT_SHIFT = 0.30f;
 
-    // lewe segmenty: przesuwamy w prawo o HALF_CAR
-    for (size_t i =0; i +1 < leftS.size(); ++i) {
+    for (size_t i = 0; i + 1 < leftS.size(); ++i) {
         glm::vec2 a = leftS[i];
-        glm::vec2 b = leftS[i +1];
+        glm::vec2 b = leftS[i + 1];
         float d = avgDistToOther(a, b, rightS);
-        if (d > (MIN_TRACK_WIDTH *0.5f) && d < MAX_TRACK_WIDTH) {
-            glm::vec2 mid = (a + b) *0.5f;
+        if (d > (MIN_TRACK_WIDTH * 0.5f) && d < MAX_TRACK_WIDTH) {
+            glm::vec2 mid = (a + b) * 0.5f;
             glm::vec2 nearest = nearestPointInPolyline(mid, rightS);
             glm::vec2 toOther = nearest - mid;
             glm::vec2 ab = b - a;
             float len = glm::length(ab);
-            if (len >1e-6f) {
-                glm::vec2 perp(-ab.y / len, ab.x / len); // normal CCW
-                float side = glm::dot(perp, toOther) >=0.0f ?1.0f : -1.0f;
-                // kierunek perp*side wskazuje w stronę przeciwnej polilinii;
-                // aby przesunąć lewą polilinię na zewnątrz (w lewo), używamy odwrotnego znaku
+            if (len > 1e-6f) {
+                glm::vec2 perp(-ab.y / len, ab.x / len);
+                float side = glm::dot(perp, toOther) >= 0.0f ? 1.0f : -1.0f;
                 glm::vec2 shift = perp * (-side * LEFT_SHIFT);
                 a += shift;
                 b += shift;
@@ -547,34 +576,38 @@ static void BuildWallsFromSides(const std::vector<Point>& leftRaw, const std::ve
         }
     }
 
-    // prawe segmenty: bez przesunięcia
-    for (size_t i =0; i +1 < rightS.size(); ++i) {
+    for (size_t i = 0; i + 1 < rightS.size(); ++i) {
         glm::vec2 a = rightS[i];
-        glm::vec2 b = rightS[i +1];
+        glm::vec2 b = rightS[i + 1];
         float d = avgDistToOther(a, b, leftS);
-        if (d > (MIN_TRACK_WIDTH *0.5f) && d < MAX_TRACK_WIDTH) {
+        if (d > (MIN_TRACK_WIDTH * 0.5f) && d < MAX_TRACK_WIDTH) {
             outWalls.push_back({ a, b });
         }
     }
 
-    // usuń krótkie segmenty
     std::vector<WallSegment> filtered;
     filtered.reserve(outWalls.size());
-    for (auto &s : outWalls) {
-        if (glm::distance(s.start, s.end) >1e-4f) filtered.push_back(s);
+    for (auto& s : outWalls) {
+        if (glm::distance(s.start, s.end) > 1e-4f) filtered.push_back(s);
     }
     outWalls.swap(filtered);
 }
 
-// -----------------------------
-// public API
-// -----------------------------
+/**
+ * @brief Inicjalizuje system kolizji i buduje segmenty ścian.
+ * @param minTrackWidth Minimalna szerokość toru używana do filtrowania.
+ */
 void TrackCollision::Init(float minTrackWidth) {
     walls.clear();
     BuildWallsFromSides(leftSideRaw, rightSideRaw, walls, minTrackWidth);
 }
 
-// Sprawdzenie kolizji: okrąg (carPos.x, carPos.z, radius) vs wszystkie segmenty
+/**
+ * @brief Sprawdza kolizję okręgu z listą segmentów ścian.
+ * @param carPos Pozycja auta (używane X i Z).
+ * @param radius Promień okręgu kolizyjnego.
+ * @return `true` jeśli nastąpiła kolizja; inaczej `false`.
+ */
 bool TrackCollision::CheckCollision(const glm::vec3& carPos, float radius) {
     glm::vec2 p(carPos.x, carPos.z);
     float r2 = radius * radius;
@@ -594,7 +627,13 @@ bool TrackCollision::CheckCollision(const glm::vec3& carPos, float radius) {
     return false;
 }
 
-// Znajdź wektor wypchnięcia (minimalny wektor, który usuwa penetrację).
+/**
+ * @brief Wyznacza minimalny wektor wypchnięcia z kolizji okręgu z segmentami ścian.
+ * @param carPos Pozycja auta (używane X i Z).
+ * @param radius Promień okręgu kolizyjnego.
+ * @param outPush Wynikowy wektor wypchnięcia w 2D.
+ * @return `true` jeśli wykryto kolizję; inaczej `false`.
+ */
 bool TrackCollision::FindCollisionPush(const glm::vec3& carPos, float radius, glm::vec2& outPush) {
     glm::vec2 p(carPos.x, carPos.z);
     float r2 = radius * radius;
@@ -644,6 +683,10 @@ bool TrackCollision::FindCollisionPush(const glm::vec3& carPos, float radius, gl
     return false;
 }
 
+/**
+ * @brief Zwraca listę segmentów ścian toru.
+ * @return Referencja do `walls`.
+ */
 const std::vector<WallSegment>& TrackCollision::GetWalls() {
     return walls;
 }

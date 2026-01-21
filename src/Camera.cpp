@@ -1,4 +1,4 @@
-#include "Camera.h"
+﻿#include "Camera.h"
 #include <iostream>
 #include <cmath>
 
@@ -9,6 +9,18 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 
+/**
+ * @file Camera.cpp
+ * @brief Implementacja klasy `Camera` (obliczanie macierzy oraz trybów kamery).
+ */
+
+ /**
+  * @brief Tworzy kamerę i inicjalizuje jej wektory kierunkowe.
+  * @param position Pozycja startowa kamery.
+  * @param up Wektor „góry” świata.
+  * @param yaw Początkowy yaw w stopniach.
+  * @param pitch Początkowy pitch w stopniach.
+  */
 Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch)
     : Front(glm::vec3(0.0f, 0.0f, -1.0f)), Zoom(ZOOM) {
     Position = position;
@@ -18,6 +30,9 @@ Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch)
     updateCameraVectors();
 }
 
+/**
+ * @brief Aktualizuje wektory `Front` i `Up` na podstawie kątów Eulera.
+ */
 void Camera::updateCameraVectors() {
     glm::vec3 front;
     front.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
@@ -29,21 +44,39 @@ void Camera::updateCameraVectors() {
     Up = glm::normalize(glm::cross(Right, Front));
 }
 
+/**
+ * @brief Zwraca macierz widoku kamery.
+ * @return Macierz widoku `lookAt(Position, Position + Front, Up)`.
+ */
 glm::mat4 Camera::GetViewMatrix() const {
     return glm::lookAt(Position, Position + Front, Up);
 }
 
+/**
+ * @brief Zwraca macierz projekcji perspektywicznej.
+ * @param aspectRatio Proporcje ekranu (szerokość / wysokość).
+ * @return Macierz perspektywy z parametrami: near=0.1, far=100.0, FOV=`Zoom`.
+ */
 glm::mat4 Camera::GetProjectionMatrix(float aspectRatio) const {
     return glm::perspective(glm::radians(Zoom), aspectRatio, 0.1f, 100.0f);
 }
 
+/**
+ * @brief Ustawia orientację kamery na podstawie rotacji yaw.
+ * @param centerPoint Punkt odniesienia (nieużywany w tej implementacji).
+ * @param yawRotation Rotacja yaw w stopniach.
+ */
 void Camera::LookAt(const glm::vec3& centerPoint, float yawRotation) {
     this->Yaw = yawRotation - 90.0f;
     this->Pitch = -15.0f;
     updateCameraVectors();
 }
 
-// Third-person smooth follow
+/**
+ * @brief Tryb trzeciej osoby: kamera płynnie podąża za samochodem.
+ * @param carPosition Pozycja samochodu.
+ * @param carFrontVector Wektor przodu samochodu.
+ */
 void Camera::FollowCar(const glm::vec3& carPosition, const glm::vec3& carFrontVector) {
     float distance = 1.6f;
     float height = 0.8f;
@@ -61,31 +94,22 @@ void Camera::FollowCar(const glm::vec3& carPosition, const glm::vec3& carFrontVe
     Up = glm::normalize(glm::cross(Right, Front));
 }
 
-// New First-person "Bumper/Eyes" camera
+/**
+ * @brief Tryb pierwszoosobowy: kamera ustawiona nisko z przodu pojazdu.
+ * @param carPosition Pozycja samochodu.
+ * @param carYaw Yaw samochodu w stopniach.
+ */
 void Camera::SetFrontCamera(const glm::vec3& carPosition, float carYaw) {
-    // "Eyes of the car" / Bumper view configuration
-    // Height: Very low (0.35f), just above the road surface for maximum speed sensation.
-    // Forward: Pushed forward (0.85f) to sit at the front bumper/headlights, 
-    //          ensuring we don't clip inside the car geometry.
-
     float height = 0.35f;
     float forwardOffset = 0.85f;
 
-    // Calculate position offset based on car rotation
-    // Note: main.cpp uses sin(Yaw) for X and cos(Yaw) for Z
     float yawRad = glm::radians(carYaw);
     glm::vec3 offset(sin(yawRad) * forwardOffset, height, cos(yawRad) * forwardOffset);
 
-    // Apply strict position lock (no smoothing) for precise control in first-person
     Position = carPosition + offset;
 
-    // Orientation:
-    // Sync Camera Yaw with Car Yaw. 
-    // Logic: If Car faces +Z (Yaw 0), Camera must face +Z.
-    // Standard GL Camera faces +Z when Yaw is 90. 
     Yaw = 90.0f - carYaw;
 
-    // Pitch almost flat (-1.0f) to look at the horizon and road ahead
     Pitch = -1.0f;
 
     updateCameraVectors();

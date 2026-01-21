@@ -1,10 +1,27 @@
-#include "Model.h"
+﻿#include "Model.h"
 #include <iostream>
 
 #include "stb_image.h"
 
+/**
+ * @file Model.cpp
+ * @brief Implementacja ładowania modeli (Assimp), siatek (OpenGL) oraz tekstur (stb_image).
+ */
+
+ /**
+  * @brief Ładuje teksturę z pliku i tworzy zasób OpenGL.
+  * @param path Ścieżka tekstury wg materiału (zwykle względna).
+  * @param directory Katalog bazowy modelu, do którego doklejany jest `path`.
+  * @return Identyfikator tekstury OpenGL.
+  */
 unsigned int TextureFromFile(const char* path, const std::string& directory);
 
+/**
+ * @brief Konstruktor siatki; zapisuje dane i tworzy bufory OpenGL.
+ * @param vertices Wierzchołki siatki.
+ * @param indices Indeksy siatki.
+ * @param textures Tekstury siatki.
+ */
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
 {
     this->vertices = vertices;
@@ -13,6 +30,9 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std:
     setupMesh();
 }
 
+/**
+ * @brief Tworzy VAO/VBO/EBO i konfiguruje atrybuty wierzchołka (pos/norm/uv).
+ */
 void Mesh::setupMesh()
 {
     glGenVertexArrays(1, &VAO);
@@ -36,6 +56,10 @@ void Mesh::setupMesh()
     glBindVertexArray(0);
 }
 
+/**
+ * @brief Renderuje siatkę z przypisanymi teksturami.
+ * @param shader Shader używany do renderowania.
+ */
 void Mesh::Draw(const Shader& shader)
 {
     unsigned int diffuseNr = 1;
@@ -57,17 +81,29 @@ void Mesh::Draw(const Shader& shader)
     glActiveTexture(GL_TEXTURE0);
 }
 
+/**
+ * @brief Konstruktor modelu; wczytuje model z pliku.
+ * @param path Ścieżka do pliku modelu.
+ */
 Model::Model(const std::string& path)
 {
     loadModel(path);
 }
 
+/**
+ * @brief Renderuje wszystkie siatki modelu.
+ * @param shader Shader używany do renderowania.
+ */
 void Model::Draw(const Shader& shader)
 {
     for (unsigned int i = 0; i < meshes.size(); i++)
         meshes[i].Draw(shader);
 }
 
+/**
+ * @brief Wczytuje scenę Assimp, ustala katalog bazowy i przetwarza drzewo węzłów.
+ * @param path Ścieżka do pliku modelu.
+ */
 void Model::loadModel(std::string path)
 {
     Assimp::Importer importer;
@@ -87,6 +123,11 @@ void Model::loadModel(std::string path)
     processNode(scene->mRootNode, scene);
 }
 
+/**
+ * @brief Rekurencyjnie przetwarza węzeł sceny Assimp.
+ * @param node Aktualnie przetwarzany węzeł.
+ * @param scene Scena Assimp.
+ */
 void Model::processNode(aiNode* node, const aiScene* scene)
 {
     for (unsigned int i = 0; i < node->mNumMeshes; i++)
@@ -100,6 +141,12 @@ void Model::processNode(aiNode* node, const aiScene* scene)
     }
 }
 
+/**
+ * @brief Konwertuje `aiMesh` na lokalną strukturę `Mesh`.
+ * @param mesh Siatka Assimp.
+ * @param scene Scena Assimp.
+ * @return Utworzony `Mesh`.
+ */
 Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 {
     std::vector<Vertex> vertices;
@@ -141,6 +188,13 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
     return Mesh(vertices, indices, textures);
 }
 
+/**
+ * @brief Ładuje tekstury materiału (z cache) dla zadanego typu.
+ * @param mat Materiał Assimp.
+ * @param type Typ tekstury Assimp.
+ * @param typeName Nazwa typu tekstury w shaderze.
+ * @return Lista tekstur.
+ */
 std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName)
 {
     std::vector<Texture> textures;
@@ -171,6 +225,12 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
     return textures;
 }
 
+/**
+ * @brief Wczytuje obraz i tworzy teksturę OpenGL.
+ * @param path Ścieżka do pliku w kontekście `directory`.
+ * @param directory Katalog bazowy modeli/tekstur.
+ * @return Identyfikator tekstury OpenGL.
+ */
 unsigned int TextureFromFile(const char* path, const std::string& directory)
 {
     std::string filename = std::string(path);
